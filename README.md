@@ -1,4 +1,10 @@
-REArmy-Knife
+BIArmy-Knife
 ============
 
-Easy to use parsing tools.
+Small and simply to use bioinformatic tools.
+
++ greplines
++ splitlines
++ fastagrep
+
+
