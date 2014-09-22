@@ -7,9 +7,12 @@ Small and simply to use bioinformatic tools.
 + splitlines
 + fastagrep (in development)
 
-# *greplines*
+## *greplines*
+----
 
-# *splitlines*
+## *splitlines*
+----
 
-# *fastagrep*
+## *fastagrep*
+----
 
