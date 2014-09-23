@@ -26,11 +26,9 @@ import time
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
-#from itertools import cycle
-#from multiprocessing import Pool
 
 __all__ = []
-__version__ = 1.1
+__version__ = 1.2
 __date__ = '2014-09-19'
 __updated__ = '2014-09-23'
 
@@ -71,34 +69,20 @@ def start(args):
         for line in fastafile:
             # Check if line header
             if line.startswith('>'):
-                trig = False 
-                
-                result = list()
+                trig = False                 
                 
                 #Loops through all patterns
                 for p in pattern:                                        
-                    result.append(p.search(line))
-                if len(list(filter(None, result))) > 0:                
-                    trig = True
-                    
+                    if p.search(line) is not None:
+                        trig = True
+                        break                                                
+                                        
             if trig:
                 f.writelines(line)   
                 
     if DEBUG:
         end = time.time()
-        print(end-start)                                      
-
-# Overhead is too big
-# with Pool(processes=args.processors) as pool:     
-# result=pool.map(grepSeq,zip(pattern,cycle((line,))))            
-# def grepSeq(data):             
-#    if data[0].search(data[1]) is not None:        
-#        return(True)
-#    else:
-#        return(False)
-        
-        
-        
+        print(end-start)                                           
         
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
@@ -167,10 +151,10 @@ if __name__ == "__main__":
         #sys.argv.append("-V")
         #sys.argv.append("-s")
         #sys.argv.append("5")
-        #sys.argv.append("-l")
-        #sys.argv.append("../test/pattern_list")
-        sys.argv.append("-e")
-        sys.argv.append("XM_003495338")
+        sys.argv.append("-l")
+        sys.argv.append("../test/pattern_list")
+        #sys.argv.append("-e")
+        #sys.argv.append("XM_003495338")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
         sys.argv.append("../test/test.fa")
                 
