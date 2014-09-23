@@ -21,17 +21,20 @@ It defines classes_and_methods
 import sys
 import os
 import re
+import time
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
+from itertools import cycle
+#from multiprocessing import Pool
 
 __all__ = []
-__version__ = 0.1
+__version__ = 1.0
 __date__ = '2014-09-19'
-__updated__ = '2014-09-19'
+__updated__ = '2014-09-23'
 
-DEBUG = 1
+DEBUG = 0
 TESTRUN = 0
 PROFILE = 0
 
@@ -46,45 +49,58 @@ class CLIError(Exception):
         return self.msg
 
 def start(args):
-    pattern = re.compile(args.pattern[0])
-
+    pattern = list()
+    
+    # Get search pattern
+    if args.pattern is not None:        
+        pattern.append(re.compile(args.pattern.strip()))
+    else:
+        for p in args.pattern_list:
+            pattern.append(re.compile(p.strip()))
+    
     if args.output:
         f = args.output    
     else:
         f = sys.stdout
+      
+    if DEBUG:
+        start = time.time()
     
-            
-    i = 1
-    if args.fr:
-        i = args.fr -1
-        for i in range(args.fr - 1):
-            args.file.readline()
-     
-    results = []
     
-    for line in args.file:
-        i = i + 1
+    
+    # Loop through fasta files
+    for fastafile in args.file:
+        for line in fastafile:
+            # Check if line header
+            if line.startswith('>'):
+                trig = False 
+                
+                result = list()
+                
+                #Loops through all patterns
+                for p in pattern:                                        
+                    result.append(p.search(line))
+                if len(list(filter(None, result))) > 0:                
+                    trig = True
+                    
+            if trig:
+                f.writelines(line)   
+                
+    if DEBUG:
+        end = time.time()
+        print(end-start)                                      
+
+# Overhead is too big
+# with Pool(processes=args.processors) as pool:     
+# result=pool.map(grepSeq,zip(pattern,cycle((line,))))            
+# def grepSeq(data):             
+#    if data[0].search(data[1]) is not None:        
+#        return(True)
+#    else:
+#        return(False)
         
-        if args.to is not None and args.to < i:
-            break
         
-        result = (pattern.search(line))
         
-        if result:
-            results.append(args.delimiter.join(result.groups()))
-           
-    # Group and Count
-    if args.group:
-        results = [line + args.delimiter + str(results.count(line)) + "\n" for line in set(results)]
-    else:
-        results = [line + "\n" for line in results]
-        
-    # Sort
-    if args.sort:
-        results.sort()
-        
-    # Write results
-    f.writelines(results)
         
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
@@ -100,7 +116,7 @@ def main(argv=None): # IGNORE:C0111
     program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
     program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
     program_license = '''%s
-
+nargs='+'
   Created by Norbert Auer on %s.
   Copyright 2014 University of Natural Resources and Life Sciences, Vienna. All rights reserved.
   
@@ -117,15 +133,19 @@ USAGE
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)        
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('-p', '--pattern', help='Single regular expression pattern to search for',type=str)
-        group.add_argument('-l', '--pattern-list', help='Path to file with multiple patterns. One pattern per line',type=FileType('r'))
-        parser.add_argument('-V', '--version', action='version', version=program_version_message)    
-        parser.add_argument('file', nargs='?', type=FileType('r'), default='-', help="File to grep. Leave empty or use '-' to read from Stdin.")
+        group.add_argument('-e', '--pattern', help='Single regular expression pattern to search for',type=str)
+        group.add_argument('-l', '--pattern-list',nargs='?', help='Path to file with multiple patterns. One pattern per line',type=FileType('r'))
+        parser.add_argument('-V', '--version', action='version', version=program_version_message)            
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))        
+        #parser.add_argument('-p', '--processors', default=None, help='How many processors should be used [Default: As many as possible]',type=int)
+        parser.add_argument('file', nargs='+', type=FileType('r'), default='-', help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
         
         # Process arguments
         args = parser.parse_args()
         
+        if DEBUG:
+            print(args)
+            
         start(args)
         
         #if verbose > 0:
@@ -133,7 +153,7 @@ USAGE
                  
         return 0
     except KeyboardInterrupt:
-        ### handle keyboard interrupt ###
+        ### handle keyboard interrupt Easy to use parsing tools.###
         return 0
     except Exception as e:
         if DEBUG or TESTRUN:
@@ -146,12 +166,16 @@ USAGE
 if __name__ == "__main__":
     if DEBUG:
         #sys.argv.append("-h")    
-        sys.argv.append("-p")
-        sys.argv.append("5")
-        #sys.argv.append("-t")
-        #sys.argv.append("6")
+        #sys.argv.append("-V")
+        #sys.argv.append("-s")
+        #sys.argv.append("5")
+        #sys.argv.append("-l")
+        #sys.argv.append("../test/pattern_list")
+        sys.argv.append("-e")
+        sys.argv.append("XM_003495338")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
-        sys.argv.append("/home/nauer/Projects/Biotop-Workshop2/Sources/rna/10029/rna.fa")
+        sys.argv.append("../test/test.fa")
+        sys.argv.append("../test/test.fa")
         
         
     if TESTRUN:
