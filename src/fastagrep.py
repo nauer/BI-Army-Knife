@@ -26,11 +26,11 @@ import time
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
-from itertools import cycle
+#from itertools import cycle
 #from multiprocessing import Pool
 
 __all__ = []
-__version__ = 1.0
+__version__ = 1.1
 __date__ = '2014-09-19'
 __updated__ = '2014-09-23'
 
@@ -65,9 +65,7 @@ def start(args):
       
     if DEBUG:
         start = time.time()
-    
-    
-    
+        
     # Loop through fasta files
     for fastafile in args.file:
         for line in fastafile:
@@ -116,7 +114,7 @@ def main(argv=None): # IGNORE:C0111
     program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
     program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
     program_license = '''%s
-nargs='+'
+
   Created by Norbert Auer on %s.
   Copyright 2014 University of Natural Resources and Life Sciences, Vienna. All rights reserved.
   
@@ -175,9 +173,7 @@ if __name__ == "__main__":
         sys.argv.append("XM_003495338")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
         sys.argv.append("../test/test.fa")
-        sys.argv.append("../test/test.fa")
-        
-        
+                
     if TESTRUN:
         import doctest
         doctest.testmod()
