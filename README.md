@@ -3,16 +3,16 @@ BI-Army-Knife
 
 Small and simply to use bioinformatic tools.
 
-+ greplines
-+ splitlines
-+ fastagrep (in development)
++ grepline.py
++ splitline.py
++ fastagrep.py
 
-## *greplines*
+## *grepline.py*
 ----
 
-## *splitlines*
+## *splitline.py*
 ----
 
-## *fastagrep*
+## *fastagrep.py*
 ----
 
