@@ -26,11 +26,11 @@ from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
 
 __all__ = []
-__version__ = 0.3
+__version__ = 0.4
 __date__ = '2014-06-04'
-__updated__ = '2014-07-11'
+__updated__ = '2014-09-27'
 
-DEBUG = 0
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
@@ -90,8 +90,8 @@ def main(argv=None): # IGNORE:C0111
     if argv is None:
         argv = sys.argv
     else:
-        sys.argv.extend(argv)
-
+        sys.argv.extend(argv)    
+        
     program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
@@ -113,7 +113,7 @@ USAGE
 
     try:
         # Setup argument parser
-        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)        
+        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
         #parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")        
         parser.add_argument('-V', '--version', action='version', version=program_version_message)    
         parser.add_argument('pattern', nargs=1, help="Grep pattern.",type=str)
@@ -123,10 +123,13 @@ USAGE
         parser.add_argument('-t', '--to', help='Read only to this line. All other lines are skipped.',type=int)
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))
         parser.add_argument('-g', '--group', help='Instead of normal input identical lines are grouped together and an additional column is added with the group count.', action='store_true')
-        parser.add_argument('-s', '--sort', help='Resulting lines are sorted', action='store_true')
+        parser.add_argument('-s', '--sort', nargs='*', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.')
         
         # Process arguments
         args = parser.parse_args()
+        
+        if DEBUG:
+            print(args)
         
         start(args)
         
@@ -150,12 +153,17 @@ if __name__ == "__main__":
         #sys.argv.append("-h")
         sys.argv.append("-d")
         sys.argv.append("\t")
-        sys.argv.append("-f")
-        sys.argv.append("5")
-        sys.argv.append("-t")
-        sys.argv.append("6")
-        sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
-        sys.argv.append("/home/nauer/Projects/updateCHOArrayIDs/Results/result_CHOArrayV2.txt")
+        sys.argv.append("-g")
+        #sys.argv.append("-f")
+        #sys.argv.append("5")
+        #sys.argv.append("-t")
+        #sys.argv.append("6")
+        sys.argv.append("-s")
+        sys.argv.append("1")        
+        sys.argv.append("-2")
+        sys.argv.append("--")
+        sys.argv.append("EMORG:([^\s]*)")
+        sys.argv.append("../test/test.blast")
         
         
     if TESTRUN:
