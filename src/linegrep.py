@@ -25,12 +25,14 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
 
+from operator import itemgetter
+
 __all__ = []
 __version__ = 0.4
 __date__ = '2014-06-04'
-__updated__ = '2014-09-27'
+__updated__ = '2014-10-03'
 
-DEBUG = 1
+DEBUG = 0
 TESTRUN = 0
 PROFILE = 0
 
@@ -57,41 +59,50 @@ def start(args):
         i = args.fr -1
         for i in range(args.fr - 1):
             args.file.readline()
-     
+            
     results = []
-    
+
     for line in args.file:
         i = i + 1
-        
+
         if args.to is not None and args.to < i:
             break
-        
+
         result = (pattern.search(line))
-        
+
         if result:
-            results.append(args.delimiter.join(result.groups()))
+            #results.append(args.delimiter.join(result.groups()))
+            results.append(result.groups())
+
+    if len(results) > 0:            
+        # Group and Count
+        if args.group:
+            results = [line + (results.count(line),) for line in set(results)]
             
-    # Group and Count
-    if args.group:
-        results = [line + args.delimiter + str(results.count(line)) + "\n" for line in set(results)]
-    else:
-        results = [line + "\n" for line in results]
-        
-    # Sort
-    if args.sort:
-        results.sort()
-        
-    # Write results
-    f.writelines(results)
-        
+        # Sort
+        if args.sort is not None:
+            # First -s value is the main sorter therefore the last sort
+            results.reverse()
+            for s in args.sort:
+                if abs(s) > len(results[0]):
+                    print("WARNING: -s {0} is ignored. Result has only {1} columns.".format(s,len(results[0])), file=sys.stderr)
+                elif abs(s) == 0:
+                    print("WARNING: -s {0} is ignored. Columns start with index 1.".format(s,len(results[0])), file=sys.stderr)
+                else:
+                    results = sorted(results, key=itemgetter(abs(s)-1),reverse=s<0)
+
+        # Write results
+        for line in results:
+            f.write(args.delimiter.join(map(str,line)) + '\n')
+
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
-    
+
     if argv is None:
         argv = sys.argv
     else:
         sys.argv.extend(argv)    
-        
+
     program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
@@ -101,10 +112,10 @@ def main(argv=None): # IGNORE:C0111
 
   Created by Norbert Auer on %s.
   Copyright 2014 University of Natural Resources and Life Sciences, Vienna. All rights reserved.
-  
+
   Licensed under the Apache License 2.0
   http://www.apache.org/licenses/LICENSE-2.0
-  
+
   Distributed on an "AS IS" basis without warranties
   or conditions of any kind, either express or implied.
 
@@ -123,19 +134,19 @@ USAGE
         parser.add_argument('-t', '--to', help='Read only to this line. All other lines are skipped.',type=int)
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))
         parser.add_argument('-g', '--group', help='Instead of normal input identical lines are grouped together and an additional column is added with the group count.', action='store_true')
-        parser.add_argument('-s', '--sort', nargs='*', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.')
-        
+        parser.add_argument('-s', '--sort', nargs='*', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.',type=int)
+
         # Process arguments
         args = parser.parse_args()
-        
+
         if DEBUG:
             print(args)
-        
+
         start(args)
-        
+
         #if verbose > 0:
         #    print("Verbose mode on")
-                 
+
         return 0
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
@@ -161,11 +172,13 @@ if __name__ == "__main__":
         sys.argv.append("-s")
         sys.argv.append("1")        
         sys.argv.append("-2")
+        sys.argv.append("-0")
+        sys.argv.append("32")
+        sys.argv.append("0")
         sys.argv.append("--")
         sys.argv.append("EMORG:([^\s]*)")
         sys.argv.append("../test/test.blast")
-        
-        
+
     if TESTRUN:
         import doctest
         doctest.testmod()
