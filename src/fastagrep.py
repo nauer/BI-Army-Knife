@@ -28,11 +28,11 @@ from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
 
 __all__ = []
-__version__ = 1.2
+__version__ = 1.3
 __date__ = '2014-09-19'
-__updated__ = '2014-09-23'
+__updated__ = '2014-10-05'
 
-DEBUG = 0
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
@@ -64,11 +64,17 @@ def start(args):
     if DEBUG:
         start = time.time()
         
+    header_re = re.compile(args.header_pattern.strip())
+    
+    trig = False 
+    
     # Loop through fasta files
     for fastafile in args.file:
         for line in fastafile:
             # Check if line header
-            if line.startswith('>'):
+            #print(header_re.search(line))
+            if header_re.search(line) is not None:
+            #if line.startswith('>'):
                 trig = False                 
                 
                 #Loops through all patterns
@@ -121,6 +127,7 @@ USAGE
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))        
         #parser.add_argument('-p', '--processors', default=None, help='How many processors should be used [Default: As many as possible]',type=int)
         parser.add_argument('file', nargs='+', type=FileType('r'), default='-', help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
+        parser.add_argument('-p', '--header-pattern',  default='^>', help='Use this pattern to identify header line.',type=str)
         
         # Process arguments
         args = parser.parse_args()
@@ -153,6 +160,8 @@ if __name__ == "__main__":
         #sys.argv.append("5")
         sys.argv.append("-l")
         sys.argv.append("../test/pattern_list")
+        sys.argv.append("-p")
+        sys.argv.append("^>")
         #sys.argv.append("-e")
         #sys.argv.append("XM_003495338")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
