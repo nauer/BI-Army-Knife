@@ -134,7 +134,7 @@ USAGE
         parser.add_argument('-t', '--to', help='Read only to this line. All other lines are skipped.',type=int)
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))
         parser.add_argument('-g', '--group', help='Instead of normal input identical lines are grouped together and an additional column is added with the group count.', action='store_true')
-        parser.add_argument('-s', '--sort', nargs='*', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.',type=int)
+        parser.add_argument('-s', '--sort', nargs='+', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.',type=int)
 
         # Process arguments
         args = parser.parse_args()
