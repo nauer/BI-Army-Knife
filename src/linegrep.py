@@ -28,9 +28,9 @@ from argparse import FileType
 from operator import itemgetter
 
 __all__ = []
-__version__ = 0.4
+__version__ = 0.5
 __date__ = '2014-06-04'
-__updated__ = '2014-10-03'
+__updated__ = '2015-01-29'
 
 DEBUG = 0
 TESTRUN = 0
@@ -73,6 +73,8 @@ def start(args):
         if result:
             #results.append(args.delimiter.join(result.groups()))
             results.append(result.groups())
+        elif args.unmatch:
+            args.unmatch[0].write(line)        
 
     if len(results) > 0:            
         # Group and Count
@@ -83,6 +85,7 @@ def start(args):
         if args.sort is not None:
             # First -s value is the main sorter therefore the last sort
             results.reverse()
+            
             for s in args.sort:
                 if abs(s) > len(results[0]):
                     print("WARNING: -s {0} is ignored. Result has only {1} columns.".format(s,len(results[0])), file=sys.stderr)
@@ -135,6 +138,7 @@ USAGE
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))
         parser.add_argument('-g', '--group', help='Instead of normal input identical lines are grouped together and an additional column is added with the group count.', action='store_true')
         parser.add_argument('-s', '--sort', nargs='+', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.',type=int)
+        parser.add_argument('-u', '--unmatch', nargs=1, type=FileType('w'), help="Write unmatched lines into file.")
 
         # Process arguments
         args = parser.parse_args()
@@ -175,8 +179,10 @@ if __name__ == "__main__":
         sys.argv.append("-0")
         sys.argv.append("32")
         sys.argv.append("0")
+        sys.argv.append("-u")
+        sys.argv.append("../test/unmatch.output") 
         sys.argv.append("--")
-        sys.argv.append("EMORG:([^\s]*)")
+        sys.argv.append("EMORG:(AF1[^\s]*)")
         sys.argv.append("../test/test.blast")
 
     if TESTRUN:
