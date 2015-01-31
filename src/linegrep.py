@@ -88,7 +88,6 @@ def start(args):
                     break
                 
                 groups = groups + rematch.groups()
-                print(groups)
             else:
                 groups = ()
                 break
@@ -104,7 +103,6 @@ def start(args):
             if rematch:
                 if len(rematch.groups()) > 0:
                     splitres = split2.split("".join(list(rematch.groups())))
-                    print(splitres) 
 
         if splitres is not None:
             for s in splitres:
