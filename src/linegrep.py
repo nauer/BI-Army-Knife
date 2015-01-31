@@ -28,9 +28,9 @@ from argparse import FileType
 from operator import itemgetter
 
 __all__ = []
-__version__ = 0.5
+__version__ = 0.9
 __date__ = '2014-06-04'
-__updated__ = '2015-01-29'
+__updated__ = '2015-01-31'
 
 DEBUG = 0
 TESTRUN = 0
@@ -47,7 +47,16 @@ class CLIError(Exception):
         return self.msg
 
 def start(args):
-    pattern = re.compile(args.pattern[0])
+    if(DEBUG):
+        print(args.pattern)
+        
+    #if(len(args.pattern) == 0 and len(args.split) == 0):
+    #    sys.stderr.write("Minimum   for help use --help")
+              
+    pattern = []
+    
+    for p in args.pattern:
+        pattern.append(re.compile(p))
 
     if args.output:
         f = args.output
@@ -68,18 +77,48 @@ def start(args):
         if args.to is not None and args.to < i:
             break
 
-        result = (pattern.search(line))
+        groups = ()
+        
+        # Process pattern
+        for p in pattern:
+            rematch = p.search(line)
+            
+            if rematch:
+                if len(rematch.groups()) == 0:
+                    break
+                
+                groups = groups + rematch.groups()
+                print(groups)
+            else:
+                groups = ()
+                break
+        
+        # Process split
+        splitres = None
+        if args.split:
+            split1 = re.compile(args.split[0])
+            split2 = re.compile(args.split[1])
+            rematch = split1.search(line)
+            
+            
+            if rematch:
+                if len(rematch.groups()) > 0:
+                    splitres = split2.split("".join(list(rematch.groups())))
+                    print(splitres) 
 
-        if result:
-            #results.append(args.delimiter.join(result.groups()))
-            results.append(result.groups())
-        elif args.unmatch:
-            args.unmatch[0].write(line)        
-
+        if splitres is not None:
+            for s in splitres:
+                results.append(groups + (s,))
+        else:
+            results.append(groups)
+                
+        if args.unmatch:
+            args.unmatch[0].write(line) 
+                   
     if len(results) > 0:            
         # Group and Count
         if args.group:
-            results = [line + (results.count(line),) for line in set(results)]
+            results = [l + (results.count(l),) for l in set(results)]
             
         # Sort
         if args.sort is not None:
@@ -130,7 +169,8 @@ USAGE
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
         #parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")        
         parser.add_argument('-V', '--version', action='version', version=program_version_message)    
-        parser.add_argument('pattern', nargs=1, help="Grep pattern.",type=str)
+        parser.add_argument('-p', '--pattern', nargs='+', help="Grep pattern.",type=str, default=['.*'])
+        parser.add_argument('-r', '--split', nargs=2, help="Split pattern. First pattern for sequence to split. Second pattern for split.",type=str)
         parser.add_argument('file', nargs='?', type=FileType('r'), default='-', help="File to grep. Leave empty or use '-' to read from Stdin.")
         parser.add_argument('-d', '--delimiter', help='Set the delimiter for the output',type=str, default='\t')
         parser.add_argument('-f', '--from', dest='fr', help='Skip N-1 lines from begin of file. Use also the --to option to limit input',type=int)
@@ -177,12 +217,19 @@ if __name__ == "__main__":
         sys.argv.append("1")        
         sys.argv.append("-2")
         sys.argv.append("-0")
-        sys.argv.append("32")
+        sys.argv.append("2")
         sys.argv.append("0")
         sys.argv.append("-u")
         sys.argv.append("../test/unmatch.output") 
+        sys.argv.append("-p")
+        sys.argv.append("EMORG:(AF[^\s]*)")
+        sys.argv.append("(\d+\.\d*)")
+        #sys.argv.append("-p")
+        #sys.argv.append("(ORG:)")
+        sys.argv.append("-r")
+        sys.argv.append("(.*)")
+        sys.argv.append("\s+")
         sys.argv.append("--")
-        sys.argv.append("EMORG:(AF1[^\s]*)")
         sys.argv.append("../test/test.blast")
 
     if TESTRUN:
