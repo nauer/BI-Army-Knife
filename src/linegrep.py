@@ -28,7 +28,7 @@ from argparse import FileType
 from operator import itemgetter
 
 __all__ = []
-__version__ = 0.9
+__version__ = 1.0
 __date__ = '2014-06-04'
 __updated__ = '2015-01-31'
 
@@ -85,6 +85,7 @@ def start(args):
             
             if rematch:
                 if len(rematch.groups()) == 0:
+                    groups = ()
                     break
                 
                 groups = groups + rematch.groups()
@@ -98,21 +99,20 @@ def start(args):
             split1 = re.compile(args.split[0])
             split2 = re.compile(args.split[1])
             rematch = split1.search(line)
-            
-            
+                        
             if rematch:
                 if len(rematch.groups()) > 0:
                     splitres = split2.split("".join(list(rematch.groups())))
 
-        if splitres is not None:
-            for s in splitres:
-                results.append(groups + (s,))
-        else:
-            results.append(groups)
+            if splitres is not None:
+                for s in splitres:
+                    results.append(groups + (s,))
+            #else:
+            #    results = []
                 
         if args.unmatch:
             args.unmatch[0].write(line) 
-                   
+                  
     if len(results) > 0:            
         # Group and Count
         if args.group:
