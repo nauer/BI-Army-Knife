@@ -28,9 +28,9 @@ from argparse import FileType
 from operator import itemgetter
 
 __all__ = []
-__version__ = 1.0
+__version__ = 1.1
 __date__ = '2014-06-04'
-__updated__ = '2015-01-31'
+__updated__ = '2015-02-02'
 
 DEBUG = 0
 TESTRUN = 0
@@ -107,8 +107,8 @@ def start(args):
             if splitres is not None:
                 for s in splitres:
                     results.append(groups + (s,))
-            #else:
-            #    results = []
+        else:
+            results.append(groups)
                 
         if args.unmatch:
             args.unmatch[0].write(line) 
@@ -224,9 +224,9 @@ if __name__ == "__main__":
         sys.argv.append("(\d+\.\d*)")
         #sys.argv.append("-p")
         #sys.argv.append("(ORG:)")
-        sys.argv.append("-r")
-        sys.argv.append("(.*)")
-        sys.argv.append("\s+")
+        #sys.argv.append("-r")
+        #sys.argv.append("(.*)")
+        #sys.argv.append("\s+")
         sys.argv.append("--")
         sys.argv.append("../test/test.blast")
 
