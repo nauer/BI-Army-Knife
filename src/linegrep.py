@@ -28,11 +28,11 @@ from argparse import FileType
 from operator import itemgetter
 
 __all__ = []
-__version__ = 1.2
+__version__ = 1.3
 __date__ = '2014-06-04'
 __updated__ = '2015-02-03'
 
-DEBUG = 1
+DEBUG = 0
 TESTRUN = 0
 PROFILE = 0
 

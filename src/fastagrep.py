@@ -28,11 +28,11 @@ from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
 
 __all__ = []
-__version__ = 1.3
+__version__ = 1.4
 __date__ = '2014-09-19'
-__updated__ = '2014-10-05'
+__updated__ = '2015-02-03'
 
-DEBUG = 1
+DEBUG = 0
 TESTRUN = 0
 PROFILE = 0
 
