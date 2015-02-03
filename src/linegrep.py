@@ -28,11 +28,11 @@ from argparse import FileType
 from operator import itemgetter
 
 __all__ = []
-__version__ = 1.1
+__version__ = 1.2
 __date__ = '2014-06-04'
-__updated__ = '2015-02-02'
+__updated__ = '2015-02-03'
 
-DEBUG = 0
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
@@ -50,8 +50,7 @@ def start(args):
     if(DEBUG):
         print(args.pattern)
         
-    #if(len(args.pattern) == 0 and len(args.split) == 0):
-    #    sys.stderr.write("Minimum   for help use --help")
+    #args.file.readline()
               
     pattern = []
     
@@ -85,14 +84,20 @@ def start(args):
             
             if rematch:
                 if len(rematch.groups()) == 0:
-                    groups = ()
+                    groups = None
                     break
                 
                 groups = groups + rematch.groups()
             else:
-                groups = ()
+                groups = None
                 break
         
+        # line is unmatch if not all patterns match
+        if groups is None:
+            if args.unmatch:
+                args.unmatch[0].write(line)
+            continue
+         
         # Process split
         splitres = None
         if args.split:
@@ -108,10 +113,11 @@ def start(args):
                 for s in splitres:
                     results.append(groups + (s,))
         else:
-            results.append(groups)
-                
-        if args.unmatch:
-            args.unmatch[0].write(line) 
+            if len(groups) > 0:
+                results.append(groups)
+            else:  
+                if args.unmatch:
+                    args.unmatch[0].write(line) 
                   
     if len(results) > 0:            
         # Group and Count
@@ -174,7 +180,7 @@ USAGE
         parser.add_argument('-f', '--from', dest='fr', help='Skip N-1 lines from begin of file. Use also the --to option to limit input',type=int)
         parser.add_argument('-t', '--to', help='Read only to this line. All other lines are skipped.',type=int)
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))
-        parser.add_argument('-g', '--group', help='Instead of normal input identical lines are grouped together and an additional column is added with the group count.', action='store_true')
+        parser.add_argument('-g', '--group', help='Instead of normal input identical lines are grouped together and an additional column is added with the group count.', action='store_true')    
         parser.add_argument('-s', '--sort', nargs='+', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.',type=int)
         parser.add_argument('-u', '--unmatch', nargs=1, type=FileType('w'), help="Write unmatched lines into file.")
 
@@ -206,7 +212,7 @@ if __name__ == "__main__":
         #sys.argv.append("-h")
         sys.argv.append("-d")
         sys.argv.append("\t")
-        sys.argv.append("-g")
+        #sys.argv.append("-g")
         #sys.argv.append("-f")
         #sys.argv.append("5")
         #sys.argv.append("-t")
@@ -220,13 +226,13 @@ if __name__ == "__main__":
         sys.argv.append("-u")
         sys.argv.append("../test/unmatch.output") 
         sys.argv.append("-p")
-        sys.argv.append("EMORG:(AF[^\s]*)")
-        sys.argv.append("(\d+\.\d*)")
+        sys.argv.append("EMORG:(AF3[^\s]*)")
+        #sys.argv.append("(\d+\.\d*)")
         #sys.argv.append("-p")
         #sys.argv.append("(ORG:)")
-        #sys.argv.append("-r")
-        #sys.argv.append("(.*)")
-        #sys.argv.append("\s+")
+        sys.argv.append("-r")
+        sys.argv.append("\s(\d*\.\d*\s+(?:\d+\s+){2})")
+        sys.argv.append("\s+")
         sys.argv.append("--")
         sys.argv.append("../test/test.blast")
 
