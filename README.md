@@ -22,6 +22,10 @@ Pattern could be a single regular expression or a list of regular expression. Th
 which identify the header line is changeable to use the program also for non fasta file
 types.
 
+There is also a summary option available providing general information about the sequence
+i.e sequence length or alphabet composition. Also sequences with duplicate headers could 
+be filtered out.
+
 ### Examples
 
 Download a protein fasta file from NCBI and extract only RefSeq sequences starting with NP
