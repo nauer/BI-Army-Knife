@@ -114,10 +114,9 @@ def start(args):
             else:
                 if args.summary or args.summary_no_header:
                     seq_len = seq_len + len(line.strip())
-                    s = set(line)
                     l = list(line)
                     
-                    for c in s:
+                    for c in l:
                         alphabet[c] += 1
                         
             if trig:
