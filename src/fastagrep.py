@@ -22,15 +22,18 @@ import sys
 import os
 import re
 import time
+import hashlib
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
 
+from collections import defaultdict
+
 __all__ = []
-__version__ = 1.4
+__version__ = 1.5
 __date__ = '2014-09-19'
-__updated__ = '2015-02-03'
+__updated__ = '2015-02-06'
 
 DEBUG = 0
 TESTRUN = 0
@@ -67,26 +70,62 @@ def start(args):
     header_re = re.compile(args.header_pattern.strip())
     
     trig = False 
+    dupHeader = set()
+    
+    alphabet = defaultdict(int)
+    seq_len = 0
+    m = hashlib.md5()
+    
+    # Write Header for option summary
+    if args.summary:
+        f.writelines("Header\tSeq.length\tAlphabeth\n")
     
     # Loop through fasta files
-    for fastafile in args.file:
+    for fastafile in args.file:    
         for line in fastafile:
             # Check if line header
-            #print(header_re.search(line))
-            if header_re.search(line) is not None:
-            #if line.startswith('>'):
+            if header_re.search(line) is not None:                
+                if trig and (args.summary or args.summary_no_header):
+                    f.write(str(seq_len) + "\t" + "|".join([ t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
+                
+                seq_len = 0     
                 trig = False                 
                 
                 #Loops through all patterns
                 for p in pattern:                                        
                     if p.search(line) is not None:
-                        trig = True
-                        break                                                
-                                        
+                        if args.rm_duplicates:
+                            mc = m.copy()
+                            mc.update(line.encode('utf8'))
+                            
+                            if mc.hexdigest() in dupHeader:
+                                trig = False                                
+                            else:
+                                dupHeader.add(mc.hexdigest())
+                                trig = True 
+                                if args.summary or args.summary_no_header:
+                                    f.write(line.rstrip() + "\t")
+                                    
+                        else:
+                            trig = True
+                            if args.summary or args.summary_no_header:
+                                f.write(line.rstrip() + "\t") 
+                        break     
+            else:
+                if args.summary or args.summary_no_header:
+                    seq_len = seq_len + len(line.strip())
+                    s = set(line)
+                    l = list(line)
+                    
+                    for c in s:
+                        alphabet[c] += 1
+                        
             if trig:
-                f.writelines(line)   
+                if args.summary == False and args.summary_no_header == False:
+                    f.writelines(line)   
                 
     if DEBUG:
+        print(args)
         end = time.time()
         print(end-start)                                           
         
@@ -121,6 +160,7 @@ USAGE
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)        
         group = parser.add_mutually_exclusive_group()
+        group2 = parser.add_mutually_exclusive_group()
         group.add_argument('-e', '--pattern', help='Single regular expression pattern to search for',type=str)
         group.add_argument('-l', '--pattern-list',nargs='?', help='Path to file with multiple patterns. One pattern per line',type=FileType('r'))
         parser.add_argument('-V', '--version', action='version', version=program_version_message)            
@@ -128,12 +168,12 @@ USAGE
         #parser.add_argument('-p', '--processors', default=None, help='How many processors should be used [Default: As many as possible]',type=int)
         parser.add_argument('file', nargs='+', type=FileType('r'), default='-', help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
         parser.add_argument('-p', '--header-pattern',  default='^>', help='Use this pattern to identify header line.',type=str)
+        parser.add_argument('-d', '--rm-duplicates', help='Remove sequences with duplicate header lines. Hold only first founded sequence.', action='store_true')
+        group2.add_argument('-s', '--summary', help='Returns instead of the normal output only the header and a summary of the sequence.', action='store_true')
+        group2.add_argument('-n', '--summary-no-header', help='Same like summary without starting header line.', action='store_true')
         
         # Process arguments
-        args = parser.parse_args()
-        
-        if DEBUG:
-            print(args)
+        args = parser.parse_args()        
             
         start(args)
         
@@ -158,14 +198,17 @@ if __name__ == "__main__":
         #sys.argv.append("-V")
         #sys.argv.append("-s")
         #sys.argv.append("5")
-        sys.argv.append("-l")
-        sys.argv.append("../test/pattern_list")
+        #sys.argv.append("-l")
+        #sys.argv.append("../test/pattern_list")
         sys.argv.append("-p")
         sys.argv.append("^>")
-        #sys.argv.append("-e")
-        #sys.argv.append("XM_003495338")
+        sys.argv.append("-d")
+        #sys.argv.append("-s")
+        sys.argv.append("-n")
+        sys.argv.append("-e")
+        sys.argv.append(".*")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
-        sys.argv.append("../test/test.fa")
+        sys.argv.append("../test/test_dup.fa")
                 
     if TESTRUN:
         import doctest
