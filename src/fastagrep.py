@@ -35,7 +35,7 @@ __version__ = 1.5
 __date__ = '2014-09-19'
 __updated__ = '2015-02-06'
 
-DEBUG = 1
+DEBUG = 0
 TESTRUN = 0
 PROFILE = 0
 
