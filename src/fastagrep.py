@@ -35,7 +35,7 @@ __version__ = 1.5
 __date__ = '2014-09-19'
 __updated__ = '2015-02-06'
 
-DEBUG = 0
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
@@ -114,10 +114,9 @@ def start(args):
             else:
                 if args.summary or args.summary_no_header:
                     seq_len = seq_len + len(line.strip())
-                    s = set(line)
                     l = list(line)
                     
-                    for c in s:
+                    for c in l:
                         alphabet[c] += 1
                         
             if trig:
