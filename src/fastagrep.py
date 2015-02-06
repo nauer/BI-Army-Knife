@@ -35,7 +35,7 @@ __version__ = 1.5
 __date__ = '2014-09-19'
 __updated__ = '2015-02-06'
 
-DEBUG = 0
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
@@ -78,7 +78,7 @@ def start(args):
     
     # Write Header for option summary
     if args.summary:
-        f.writelines("Header\tSeq.length\tAlphabeth\n")
+        f.writelines("Header\tSeq.length\tAlphabet\n")
     
     # Loop through fasta files
     for fastafile in args.file:    
@@ -88,6 +88,8 @@ def start(args):
                 if trig and (args.summary or args.summary_no_header):
                     f.write(str(seq_len) + "\t" + "|".join([ t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
                 
+                alphabet.clear()
+                    
                 seq_len = 0     
                 trig = False                 
                 
@@ -114,7 +116,7 @@ def start(args):
             else:
                 if args.summary or args.summary_no_header:
                     seq_len = seq_len + len(line.strip())
-                    l = list(line)
+                    l = list(line.strip())
                     
                     for c in l:
                         alphabet[c] += 1
@@ -201,9 +203,9 @@ if __name__ == "__main__":
         #sys.argv.append("../test/pattern_list")
         sys.argv.append("-p")
         sys.argv.append("^>")
-        sys.argv.append("-d")
-        #sys.argv.append("-s")
-        sys.argv.append("-n")
+        #sys.argv.append("-d")
+        sys.argv.append("-s")
+        #sys.argv.append("-n")
         sys.argv.append("-e")
         sys.argv.append(".*")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
