@@ -31,9 +31,9 @@ from argparse import FileType
 from collections import defaultdict
 
 __all__ = []
-__version__ = 1.5
+__version__ = 1.6
 __date__ = '2014-09-19'
-__updated__ = '2015-02-06'
+__updated__ = '2015-03-14'
 
 DEBUG = 0
 TESTRUN = 0
@@ -52,6 +52,9 @@ class CLIError(Exception):
 def start(args):
     pattern = list()
     
+    if args.pattern is None and args.pattern_list is None:
+        args.pattern = "."
+        
     # Get search pattern
     if args.pattern is not None:        
         pattern.append(re.compile(args.pattern.strip()))
@@ -124,6 +127,8 @@ def start(args):
             if trig:
                 if args.summary == False and args.summary_no_header == False:
                     f.writelines(line)   
+    
+    f.writelines("\n")
                 
     if DEBUG:
         print(args)
@@ -201,13 +206,13 @@ if __name__ == "__main__":
         #sys.argv.append("5")
         #sys.argv.append("-l")
         #sys.argv.append("../test/pattern_list")
-        sys.argv.append("-p")
-        sys.argv.append("^>")
+        #sys.argv.append("-p")
+        #sys.argv.append("^>")
         #sys.argv.append("-d")
         sys.argv.append("-s")
         #sys.argv.append("-n")
-        sys.argv.append("-e")
-        sys.argv.append(".*")
+        #sys.argv.append("-e")
+        #sys.argv.append(".*")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
         sys.argv.append("../test/test_dup.fa")
                 
