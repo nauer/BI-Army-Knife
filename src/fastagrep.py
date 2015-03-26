@@ -31,9 +31,9 @@ from argparse import FileType
 from collections import defaultdict
 
 __all__ = []
-__version__ = 1.6
+__version__ = 1.7
 __date__ = '2014-09-19'
-__updated__ = '2015-03-14'
+__updated__ = '2015-03-26'
 
 DEBUG = 0
 TESTRUN = 0
@@ -128,7 +128,10 @@ def start(args):
                 if args.summary == False and args.summary_no_header == False:
                     f.writelines(line)   
     
-    f.writelines("\n")
+    if trig and (args.summary or args.summary_no_header):
+        f.write(str(seq_len) + "\t" + "|".join([ t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
+    else:                            
+        f.writelines("\n")
                 
     if DEBUG:
         print(args)
