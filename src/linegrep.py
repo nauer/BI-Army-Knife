@@ -28,11 +28,11 @@ from argparse import FileType
 from operator import itemgetter
 
 __all__ = []
-__version__ = 1.3
+__version__ = 1.4
 __date__ = '2014-06-04'
-__updated__ = '2015-02-03'
+__updated__ = '2015-03-26'
 
-DEBUG = 0
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
@@ -177,9 +177,11 @@ USAGE
         parser.add_argument('-r', '--split', nargs=2, help="Split pattern. First pattern for sequence to split. Second pattern for split.",type=str)
         parser.add_argument('file', nargs='?', type=FileType('r'), default='-', help="File to grep. Leave empty or use '-' to read from Stdin.")
         parser.add_argument('-d', '--delimiter', help='Set the delimiter for the output',type=str, default='\t')
+        parser.add_argument('-e', '--separator', help='Set the separator for the aggregate function.',type=str, default='\|')
         parser.add_argument('-f', '--from', dest='fr', help='Skip N-1 lines from begin of file. Use also the --to option to limit input',type=int)
         parser.add_argument('-t', '--to', help='Read only to this line. All other lines are skipped.',type=int)
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))
+        parser.add_argument('-a', '--aggregate', nargs='+', help='Aggregate lines defined by the aggregate pattern. The other patterns are concatenated by a string defined in --separator. Aggregation is completed before the grouping function runs.', type=str, default=None)
         parser.add_argument('-g', '--group', help='Instead of normal input identical lines are grouped together and an additional column is added with the group count.', action='store_true')    
         parser.add_argument('-s', '--sort', nargs='+', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.',type=int)
         parser.add_argument('-u', '--unmatch', nargs=1, type=FileType('w'), help="Write unmatched lines into file.")
