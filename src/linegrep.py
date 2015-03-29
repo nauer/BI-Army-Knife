@@ -30,7 +30,7 @@ from operator import itemgetter
 __all__ = []
 __version__ = 1.4
 __date__ = '2014-06-04'
-__updated__ = '2015-03-26'
+__updated__ = '2015-03-29'
 
 DEBUG = 1
 TESTRUN = 0
@@ -119,7 +119,15 @@ def start(args):
                 if args.unmatch:
                     args.unmatch[0].write(line) 
                   
-    if len(results) > 0:            
+    if len(results) > 0:   
+        # Aggregate
+        if args.aggregate:
+            if DEBUG:
+                print("AGGREGATE")
+            # Process aggregate pattern
+            for res in results:                
+                print(res)                            
+                 
         # Group and Count
         if args.group:
             results = [l + (results.count(l),) for l in set(results)]
@@ -181,7 +189,7 @@ USAGE
         parser.add_argument('-f', '--from', dest='fr', help='Skip N-1 lines from begin of file. Use also the --to option to limit input',type=int)
         parser.add_argument('-t', '--to', help='Read only to this line. All other lines are skipped.',type=int)
         parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))
-        parser.add_argument('-a', '--aggregate', nargs='+', help='Aggregate lines defined by the aggregate pattern. The other patterns are concatenated by a string defined in --separator. Aggregation is completed before the grouping function runs.', type=str, default=None)
+        parser.add_argument('-a', '--aggregate', nargs='+', help='Aggregate result lines defined by the column numbers. The other patterns are concatenated by a string defined in --separator. Aggregation is completed before grouping and behind splitting.', type=int)
         parser.add_argument('-g', '--group', help='Instead of normal input identical lines are grouped together and an additional column is added with the group count.', action='store_true')    
         parser.add_argument('-s', '--sort', nargs='+', help='Set columns for sorting. Use + or - to set descending or ascending order i.e -s -2 3 for sorting column 2 in descending order and than column 3 in ascending order.',type=int)
         parser.add_argument('-u', '--unmatch', nargs=1, type=FileType('w'), help="Write unmatched lines into file.")
@@ -214,27 +222,27 @@ if __name__ == "__main__":
         #sys.argv.append("-h")
         sys.argv.append("-d")
         sys.argv.append("\t")
-        #sys.argv.append("-g")
-        #sys.argv.append("-f")
+        sys.argv.append("-a")
+        sys.argv.append("^(\S*)")
         #sys.argv.append("5")
         #sys.argv.append("-t")
         #sys.argv.append("6")
-        sys.argv.append("-s")
-        sys.argv.append("1")        
-        sys.argv.append("-2")
-        sys.argv.append("-0")
-        sys.argv.append("2")
-        sys.argv.append("0")
+        #sys.argv.append("-s")
+        #sys.argv.append("1")        
+        #sys.argv.append("-2")
+        #sys.argv.append("-0")
+        #sys.argv.append("2")
+        #sys.argv.append("0")
         sys.argv.append("-u")
         sys.argv.append("../test/unmatch.output") 
         sys.argv.append("-p")
         sys.argv.append("EMORG:(AF3[^\s]*)")
         #sys.argv.append("(\d+\.\d*)")
         #sys.argv.append("-p")
-        #sys.argv.append("(ORG:)")
-        sys.argv.append("-r")
-        sys.argv.append("\s(\d*\.\d*\s+(?:\d+\s+){2})")
-        sys.argv.append("\s+")
+        sys.argv.append("(^.*)ORG:")
+        #sys.argv.append("-r")
+        #sys.argv.append("\s(\d*\.\d*\s+(?:\d+\s+){2})")
+        #sys.argv.append("\s+")
         sys.argv.append("--")
         sys.argv.append("../test/test.blast")
 
