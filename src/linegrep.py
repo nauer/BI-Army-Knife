@@ -122,12 +122,17 @@ def start(args):
     if len(results) > 0:   
         # Aggregate
         if args.aggregate:
-            if DEBUG:
-                print("AGGREGATE")
-            # Process aggregate pattern
-            for res in results:                
-                print(res)                            
-                 
+            for agg_col in args.aggregate:
+                if agg_col > len(results[0]):
+                    print("STOP: More aggregate columns than search patterns.", file=sys.stderr)
+                    sys.exit()
+                    
+                    if DEBUG:
+                        print("AGGREGATE")
+                    # Process aggregate pattern
+                    for res in results:                
+                        print(res)                            
+                        print(len(res))
         # Group and Count
         if args.group:
             results = [l + (results.count(l),) for l in set(results)]
@@ -223,7 +228,7 @@ if __name__ == "__main__":
         sys.argv.append("-d")
         sys.argv.append("\t")
         sys.argv.append("-a")
-        sys.argv.append("^(\S*)")
+        sys.argv.append("1")
         #sys.argv.append("5")
         #sys.argv.append("-t")
         #sys.argv.append("6")
