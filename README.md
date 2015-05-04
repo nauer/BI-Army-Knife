@@ -6,7 +6,8 @@ Small and easy to use bioinformatic tools.
 + grepline.py
 + fastagrep.py
 
-## *grepline.py*
+## *linegrep.py*
+Uses one or more regular regression patterns to extract different fields from line.
 TODO
 
 ###Dependencies
