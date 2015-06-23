@@ -28,9 +28,9 @@ from argparse import FileType
 from operator import itemgetter
 
 __all__ = []
-__version__ = 1.3
+__version__ = 1.4
 __date__ = '2014-06-04'
-__updated__ = '2015-02-03'
+__updated__ = '2015-06-23'
 
 DEBUG = 0
 TESTRUN = 0
@@ -53,9 +53,14 @@ def start(args):
     #args.file.readline()
               
     pattern = []
+    Pattern = [] # Optional patterns
     
     for p in args.pattern:
         pattern.append(re.compile(p))
+    
+    if args.opt_pattern is not None:  
+        for P in args.opt_pattern:
+            Pattern.append(re.compile(P))
 
     if args.output:
         f = args.output
@@ -91,13 +96,28 @@ def start(args):
             else:
                 groups = None
                 break
+            
+        
         
         # line is unmatch if not all patterns match
         if groups is None:
             if args.unmatch:
                 args.unmatch[0].write(line)
             continue
-         
+        else:
+            # Process optional pattern
+            for P in Pattern:
+                rematch = P.search(line)
+            
+                if rematch:
+                    if len(rematch.groups()) == 0:
+                        groups = groups + ("",)
+                                    
+                    groups = groups + rematch.groups()
+                else:
+                    groups = groups + ("",)
+                        
+            
         # Process split
         splitres = None
         if args.split:
@@ -174,6 +194,7 @@ USAGE
         #parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")        
         parser.add_argument('-V', '--version', action='version', version=program_version_message)    
         parser.add_argument('-p', '--pattern', nargs='+', help="Grep pattern.",type=str, default=['.*'])
+        parser.add_argument('-P', '--opt-pattern', nargs='*', help="Optional grep pattern. Count line also if pattern is not found.",type=str)
         parser.add_argument('-r', '--split', nargs=2, help="Split pattern. First pattern for sequence to split. Second pattern for split.",type=str)
         parser.add_argument('file', nargs='?', type=FileType('r'), default='-', help="File to grep. Leave empty or use '-' to read from Stdin.")
         parser.add_argument('-d', '--delimiter', help='Set the delimiter for the output',type=str, default='\t')
@@ -217,16 +238,18 @@ if __name__ == "__main__":
         #sys.argv.append("5")
         #sys.argv.append("-t")
         #sys.argv.append("6")
-        sys.argv.append("-s")
-        sys.argv.append("1")        
-        sys.argv.append("-2")
-        sys.argv.append("-0")
-        sys.argv.append("2")
-        sys.argv.append("0")
-        sys.argv.append("-u")
-        sys.argv.append("../test/unmatch.output") 
+        #sys.argv.append("-s")
+        #sys.argv.append("1")        
+        #sys.argv.append("-2")
+        #sys.argv.append("-0")
+        #sys.argv.append("2")
+        #sys.argv.append("0")
+        #sys.argv.append("-u")
+        #sys.argv.append("../test/unmatch.output") 
         sys.argv.append("-p")
         sys.argv.append("EMORG:(AF3[^\s]*)")
+        sys.argv.append("-P")
+        sys.argv.append("(84\.)")
         #sys.argv.append("(\d+\.\d*)")
         #sys.argv.append("-p")
         #sys.argv.append("(ORG:)")
