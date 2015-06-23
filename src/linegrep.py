@@ -157,7 +157,11 @@ def start(args):
                 else:
                     results = sorted(results, key=itemgetter(abs(s)-1),reverse=s<0)
 
-        # Write results
+        # Add Header
+        if args.header:
+            f.write(args.header + '\n')
+            
+        # Write results        
         for line in results:
             f.write(args.delimiter.join(map(str,line)) + '\n')
 
@@ -193,6 +197,7 @@ USAGE
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
         #parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")        
         parser.add_argument('-V', '--version', action='version', version=program_version_message)    
+        parser.add_argument('-H', '--header', nargs='?', help="Add header line to output.",type=str)
         parser.add_argument('-p', '--pattern', nargs='+', help="Grep pattern.",type=str, default=['.*'])
         parser.add_argument('-P', '--opt-pattern', nargs='*', help="Optional grep pattern. Count line also if pattern is not found.",type=str)
         parser.add_argument('-r', '--split', nargs=2, help="Split pattern. First pattern for sequence to split. Second pattern for split.",type=str)
