@@ -165,6 +165,8 @@ def start(args):
         for line in results:
             f.write(args.delimiter.join(map(str,line)) + '\n')
 
+        f.close()
+
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
 
