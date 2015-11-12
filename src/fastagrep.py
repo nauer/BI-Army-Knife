@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # encoding: utf-8
-'''
-fastagrep -- search for a regular expression pattern in fasta headers from a multi fasta file and 
+"""
+fastagrep -- search for a regular expression pattern in fasta headers from a multi fasta file and
 extract matching sequences to a new fasta file.
 
 fastagrep is a description
@@ -9,14 +9,14 @@ fastagrep is a description
 It defines classes_and_methods
 
 @author:     Norbert Auer
-        
+
 @copyright:  2014 University of Natural Resources and Life Sciences, Vienna. All rights reserved.
-        
+
 @license:    license
 
 @contact:    norbert.auer@boku.ac.at
 @deffield    updated: Updated
-'''
+"""
 
 import sys
 import os
@@ -31,27 +31,45 @@ from argparse import FileType
 from collections import defaultdict
 
 __all__ = []
-__version__ = 1.7
+__version__ = 1.8
 __date__ = '2014-09-19'
-__updated__ = '2015-03-26'
+__updated__ = '2015-11-12'
 
-DEBUG = 0
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
+
 class CLIError(Exception):
-    '''Generic exception to raise and log different fatal errors.'''
+    """Generic exception to raise and log different fatal errors."""
     def __init__(self, msg):
         super(CLIError).__init__(type(self))
         self.msg = "E: %s" % msg
+
     def __str__(self):
         return self.msg
+
     def __unicode__(self):
         return self.msg
 
+
 def start(args):
     pattern = list()
-    
+    seq_count = 0
+
+    filename, file_extension = os.path.splitext(args.file[0].name)
+
+    # Check if single sequence output mode
+    if args.single_seq is None:
+        args.single_seq = '.'
+    elif args.single_seq == '-':
+        args.single_seq = None
+
+    if args.single_seq is not None:
+        if not os.path.exists(args.single_seq):
+            raise CLIError("-O {} - Path does not exist".format(args.single_seq))
+
+    # Set default pattern if pattern was not defined
     if args.pattern is None and args.pattern_list is None:
         args.pattern = "."
         
@@ -63,7 +81,9 @@ def start(args):
             pattern.append(re.compile(p.strip()))
     
     if args.output:
-        f = args.output    
+        f = args.output
+    elif args.single_seq is not None:
+        f = None
     else:
         f = sys.stdout
       
@@ -80,25 +100,32 @@ def start(args):
     m = hashlib.md5()
     
     # Write Header for option summary
-    if args.summary:
+    if args.summary and f is not None:
         f.writelines("Header\tSeq.length\tAlphabet\n")
     
     # Loop through fasta files
     for fastafile in args.file:    
         for line in fastafile:
             # Check if line header
-            if header_re.search(line) is not None:                
+            if header_re.search(line) is not None:
                 if trig and (args.summary or args.summary_no_header):
-                    f.write(str(seq_len) + "\t" + "|".join([ t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
-                
+                    f.write(str(seq_len) + "\t" + "|".join([t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
+
                 alphabet.clear()
                     
                 seq_len = 0     
                 trig = False                 
                 
-                #Loops through all patterns
+                # Loops through all patterns
                 for p in pattern:                                        
                     if p.search(line) is not None:
+                        if args.single_seq is not None:
+                            f = open(os.path.join(args.single_seq, "".join([args.prefix, str(seq_count), file_extension])), 'w')
+                            seq_count += 1
+                            # Write Header for option summary
+                            if args.summary and f is not None:
+                                f.writelines("Header\tSeq.length\tAlphabet\n")
+
                         if args.rm_duplicates:
                             mc = m.copy()
                             mc.update(line.encode('utf8'))
@@ -115,31 +142,32 @@ def start(args):
                             trig = True
                             if args.summary or args.summary_no_header:
                                 f.write(line.rstrip() + "\t") 
-                        break     
+                        break
             else:
                 if args.summary or args.summary_no_header:
-                    seq_len = seq_len + len(line.strip())
+                    seq_len += len(line.strip())
                     l = list(line.strip())
                     
                     for c in l:
                         alphabet[c] += 1
                         
             if trig:
-                if args.summary == False and args.summary_no_header == False:
+                if args.summary is False and args.summary_no_header is False:
                     f.writelines(line)   
     
     if trig and (args.summary or args.summary_no_header):
-        f.write(str(seq_len) + "\t" + "|".join([ t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
+        f.write(str(seq_len) + "\t" + "|".join([t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
     else:                            
         f.writelines("\n")
                 
     if DEBUG:
         print(args)
         end = time.time()
-        print(end-start)                                           
-        
+        print(end - start)
+
+
 def main(argv=None): # IGNORE:C0111
-    '''Command line options.'''
+    """Command line options."""
     
     if argv is None:
         argv = sys.argv
@@ -170,17 +198,27 @@ USAGE
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)        
         group = parser.add_mutually_exclusive_group()
         group2 = parser.add_mutually_exclusive_group()
-        group.add_argument('-e', '--pattern', help='Single regular expression pattern to search for',type=str)
-        group.add_argument('-l', '--pattern-list',nargs='?', help='Path to file with multiple patterns. One pattern per line',type=FileType('r'))
-        parser.add_argument('-V', '--version', action='version', version=program_version_message)            
-        parser.add_argument('-o', '--output', help='Use output file instead of stdout',type=FileType('w'))        
-        #parser.add_argument('-p', '--processors', default=None, help='How many processors should be used [Default: As many as possible]',type=int)
-        parser.add_argument('file', nargs='+', type=FileType('r'), default='-', help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
-        parser.add_argument('-p', '--header-pattern',  default='^>', help='Use this pattern to identify header line.',type=str)
-        parser.add_argument('-d', '--rm-duplicates', help='Remove sequences with duplicate header lines. Hold only first founded sequence.', action='store_true')
-        group2.add_argument('-s', '--summary', help='Returns instead of the normal output only the header and a summary of the sequence.', action='store_true')
-        group2.add_argument('-n', '--summary-no-header', help='Same like summary without starting header line.', action='store_true')
-        
+        group3 = parser.add_mutually_exclusive_group()
+        group.add_argument('-e', '--pattern', help='Single regular expression pattern to search for', type=str)
+        group.add_argument('-l', '--pattern-list', nargs='?',
+                           help='Path to file with multiple patterns. One pattern per line', type=FileType('r'))
+        parser.add_argument('-V', '--version', action='version', version=program_version_message)
+        parser.add_argument('file', nargs='+', type=FileType('r'), default='-',
+                            help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
+        parser.add_argument('-p', '--header-pattern',  default='^>', type=str,
+                            help='Use this pattern to identify header line.')
+        parser.add_argument('-d', '--rm-duplicates', action='store_true',
+                            help='Remove sequences with duplicate header lines. Hold only first founded sequence.')
+        group2.add_argument('-s', '--summary', action='store_true',
+                            help='Returns instead of the normal output only the header and a summary of the sequence.')
+        group2.add_argument('-n', '--summary-no-header', action='store_true',
+                            help='Same like summary without starting header line.')
+        group3.add_argument('-o', '--output', help='Use output file instead of stdout', type=FileType('w'))
+        group3.add_argument('-O', '--single-seq', type=str, default='-', nargs="?",
+                            help='For each fasta sequence a output file is generated. Use -n to set name prefix. Define an output folder.')
+        parser.add_argument('-r', '--prefix',  default='output', type=str,
+                            help='Set name prefix for single sequence output mode. Output file name is set as <prefix>{number}.{input-extention}. Only used with option -O.')
+
         # Process arguments
         args = parser.parse_args()        
             
@@ -191,7 +229,7 @@ USAGE
                  
         return 0
     except KeyboardInterrupt:
-        ### handle keyboard interrupt Easy to use parsing tools.###
+        # handle keyboard interrupt Easy to use parsing tools.###
         return 0
     except Exception as e:
         if DEBUG or TESTRUN:
@@ -203,20 +241,21 @@ USAGE
 
 if __name__ == "__main__":
     if DEBUG:
-        #sys.argv.append("-h")    
-        #sys.argv.append("-V")
-        #sys.argv.append("-s")
-        #sys.argv.append("5")
-        #sys.argv.append("-l")
-        #sys.argv.append("../test/pattern_list")
-        #sys.argv.append("-p")
-        #sys.argv.append("^>")
-        #sys.argv.append("-d")
-        sys.argv.append("-s")
-        #sys.argv.append("-n")
-        #sys.argv.append("-e")
-        #sys.argv.append(".*")
-        #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
+        # sys.argv.append("-h")
+        # sys.argv.append("-V")
+        sys.argv.append("-r")
+        sys.argv.append("test")
+        sys.argv.append("-O")
+        sys.argv.append("test")
+        # sys.argv.append("../test/pattern_list")
+        sys.argv.append("-e")
+        sys.argv.append("625180358")
+        # sys.argv.append("-d")
+        # sys.argv.append("-s")
+        # sys.argv.append("-n")
+        # sys.argv.append("-e")
+        # sys.argv.append(".*")
+        # sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
         sys.argv.append("../test/test_dup.fa")
                 
     if TESTRUN:
