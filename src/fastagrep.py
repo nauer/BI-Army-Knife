@@ -55,7 +55,7 @@ class CLIError(Exception):
 
 def start(args):
     pattern = list()
-    seq_count = 0
+    file_count = 0
 
     filename, file_extension = os.path.splitext(args.file[0].name)
 
@@ -72,39 +72,39 @@ def start(args):
     # Set default pattern if pattern was not defined
     if args.pattern is None and args.pattern_list is None:
         args.pattern = "."
-        
+
     # Get search pattern
-    if args.pattern is not None:        
+    if args.pattern is not None:
         pattern.append(re.compile(args.pattern.strip()))
     else:
         for p in args.pattern_list:
             pattern.append(re.compile(p.strip()))
-    
+
     if args.output:
         f = args.output
     elif args.single_seq is not None:
         f = None
     else:
         f = sys.stdout
-      
+
     if DEBUG:
         start = time.time()
-        
+
     header_re = re.compile(args.header_pattern.strip())
-    
-    trig = False 
+
+    trig = False
     dupHeader = set()
-    
+
     alphabet = defaultdict(int)
     seq_len = 0
     m = hashlib.md5()
-    
+
     # Write Header for option summary
     if args.summary and f is not None:
         f.writelines("Header\tSeq.length\tAlphabet\n")
-    
+
     # Loop through fasta files
-    for fastafile in args.file:    
+    for fastafile in args.file:
         for line in fastafile:
             # Check if line header
             if header_re.search(line) is not None:
@@ -112,16 +112,21 @@ def start(args):
                     f.write(str(seq_len) + "\t" + "|".join([t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
 
                 alphabet.clear()
-                    
-                seq_len = 0     
-                trig = False                 
-                
+
+                seq_len = 0
+                trig = False
+                seq_count = 0
                 # Loops through all patterns
-                for p in pattern:                                        
+                for p in pattern:
                     if p.search(line) is not None:
                         if args.single_seq is not None:
-                            f = open(os.path.join(args.single_seq, "".join([args.prefix, str(seq_count), file_extension])), 'w')
-                            seq_count += 1
+                            if seq_count == 0:
+                                f = open(os.path.join(args.single_seq, "".join([args.prefix, str(file_count), file_extension])), 'w')
+                                seq_count += 1
+
+                            if
+                            file_count += 1
+
                             # Write Header for option summary
                             if args.summary and f is not None:
                                 f.writelines("Header\tSeq.length\tAlphabet\n")
@@ -129,37 +134,37 @@ def start(args):
                         if args.rm_duplicates:
                             mc = m.copy()
                             mc.update(line.encode('utf8'))
-                            
+
                             if mc.hexdigest() in dupHeader:
-                                trig = False                                
+                                trig = False
                             else:
                                 dupHeader.add(mc.hexdigest())
-                                trig = True 
+                                trig = True
                                 if args.summary or args.summary_no_header:
                                     f.write(line.rstrip() + "\t")
-                                    
+
                         else:
                             trig = True
                             if args.summary or args.summary_no_header:
-                                f.write(line.rstrip() + "\t") 
+                                f.write(line.rstrip() + "\t")
                         break
             else:
                 if args.summary or args.summary_no_header:
                     seq_len += len(line.strip())
                     l = list(line.strip())
-                    
+
                     for c in l:
                         alphabet[c] += 1
-                        
+
             if trig:
                 if args.summary is False and args.summary_no_header is False:
-                    f.writelines(line)   
-    
+                    f.writelines(line)
+
     if trig and (args.summary or args.summary_no_header):
         f.write(str(seq_len) + "\t" + "|".join([t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
-    else:                            
+    else:
         f.writelines("\n")
-                
+
     if DEBUG:
         print(args)
         end = time.time()
@@ -168,7 +173,7 @@ def start(args):
 
 def main(argv=None): # IGNORE:C0111
     """Command line options."""
-    
+
     if argv is None:
         argv = sys.argv
     else:
@@ -183,10 +188,10 @@ def main(argv=None): # IGNORE:C0111
 
   Created by Norbert Auer on %s.
   Copyright 2014 University of Natural Resources and Life Sciences, Vienna. All rights reserved.
-  
+
   Licensed under the Apache License 2.0
   http://www.apache.org/licenses/LICENSE-2.0
-  
+
   Distributed on an "AS IS" basis without warranties
   or conditions of any kind, either express or implied.
 
@@ -195,7 +200,7 @@ USAGE
 
     try:
         # Setup argument parser
-        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)        
+        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
         group = parser.add_mutually_exclusive_group()
         group2 = parser.add_mutually_exclusive_group()
         group3 = parser.add_mutually_exclusive_group()
@@ -215,18 +220,20 @@ USAGE
                             help='Same like summary without starting header line.')
         group3.add_argument('-o', '--output', help='Use output file instead of stdout', type=FileType('w'))
         group3.add_argument('-O', '--single-seq', type=str, default='-', nargs="?",
-                            help='For each fasta sequence a output file is generated. Use -n to set name prefix. Define an output folder.')
+                            help='Split multi-fasta files in smaller files. Size is 1 by default and is set by -z. Use -r to set name prefix. Default output folder is the current working directory. Add a folder to change directory.')
         parser.add_argument('-r', '--prefix',  default='output', type=str,
                             help='Set name prefix for single sequence output mode. Output file name is set as <prefix>{number}.{input-extention}. Only used with option -O.')
+        parser.add_argument('-z', '--size',  default=1, type=int,
+                            help='Set size of new fasta files. Only used with option -O.')
 
         # Process arguments
-        args = parser.parse_args()        
-            
+        args = parser.parse_args()
+
         start(args)
-        
+
         #if verbose > 0:
         #    print("Verbose mode on")
-                 
+
         return 0
     except KeyboardInterrupt:
         # handle keyboard interrupt Easy to use parsing tools.###
@@ -257,7 +264,7 @@ if __name__ == "__main__":
         # sys.argv.append(".*")
         # sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
         sys.argv.append("../test/test_dup.fa")
-                
+
     if TESTRUN:
         import doctest
         doctest.testmod()
