@@ -31,9 +31,9 @@ from argparse import FileType
 from collections import defaultdict
 
 __all__ = []
-__version__ = 1.8
+__version__ = '1.9'
 __date__ = '2014-09-19'
-__updated__ = '2015-11-12'
+__updated__ = '2015-11-16'
 
 DEBUG = 0
 TESTRUN = 0
@@ -97,10 +97,11 @@ def start(args):
 
     alphabet = defaultdict(int)
     seq_len = 0
+    seq_count = 0
     m = hashlib.md5()
 
     # Write Header for option summary
-    if args.summary and f is not None:
+    if args.summary and f is not None and args.summary_no_header is not True:
         f.writelines("Header\tSeq.length\tAlphabet\n")
 
     # Loop through fasta files
@@ -113,24 +114,11 @@ def start(args):
 
                 alphabet.clear()
 
-                seq_len = 0
                 trig = False
-                seq_count = 0
+
                 # Loops through all patterns
                 for p in pattern:
                     if p.search(line) is not None:
-                        if args.single_seq is not None:
-                            if seq_count == 0:
-                                f = open(os.path.join(args.single_seq, "".join([args.prefix, str(file_count), file_extension])), 'w')
-                                seq_count += 1
-
-                            if
-                            file_count += 1
-
-                            # Write Header for option summary
-                            if args.summary and f is not None:
-                                f.writelines("Header\tSeq.length\tAlphabet\n")
-
                         if args.rm_duplicates:
                             mc = m.copy()
                             mc.update(line.encode('utf8'))
@@ -140,11 +128,24 @@ def start(args):
                             else:
                                 dupHeader.add(mc.hexdigest())
                                 trig = True
-                                if args.summary or args.summary_no_header:
-                                    f.write(line.rstrip() + "\t")
-
                         else:
                             trig = True
+
+                        if trig:
+                            if args.single_seq is not None:
+                                if seq_count == 0:
+                                    f = open(os.path.join(args.single_seq, "".join([args.prefix, str(file_count),
+                                                                                    file_extension])), 'w')
+                                    # Write Header for option summary
+                                    if args.summary and args.summary_no_header is not True:
+                                        f.writelines("Header\tSeq.length\tAlphabet\n")
+
+                                seq_count += 1
+
+                                if seq_count >= args.size:
+                                    file_count += 1
+                                    seq_count = 0
+
                             if args.summary or args.summary_no_header:
                                 f.write(line.rstrip() + "\t")
                         break
@@ -166,10 +167,10 @@ def start(args):
         f.writelines("\n")
 
     if DEBUG:
+        print("Current working directory:".format(os.getcwd()))
         print(args)
         end = time.time()
         print(end - start)
-
 
 def main(argv=None): # IGNORE:C0111
     """Command line options."""
@@ -250,16 +251,19 @@ if __name__ == "__main__":
     if DEBUG:
         # sys.argv.append("-h")
         # sys.argv.append("-V")
+        # sys.argv.append("-s")
+        sys.argv.append("-z")
+        sys.argv.append("3")
         sys.argv.append("-r")
         sys.argv.append("test")
         sys.argv.append("-O")
-        sys.argv.append("test")
+        sys.argv.append(".")
         # sys.argv.append("../test/pattern_list")
         sys.argv.append("-e")
-        sys.argv.append("625180358")
-        # sys.argv.append("-d")
-        # sys.argv.append("-s")
-        # sys.argv.append("-n")
+        sys.argv.append("62518035")
+        sys.argv.append("--prefix")
+        sys.argv.append("tata")
+        sys.argv.append("-d")
         # sys.argv.append("-e")
         # sys.argv.append(".*")
         # sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
