@@ -31,7 +31,7 @@ from argparse import FileType
 from collections import defaultdict
 
 __all__ = []
-__version__ = '1.10'
+__version__ = '1.11'
 __date__ = '2014-09-19'
 __updated__ = '2015-11-17'
 
@@ -107,6 +107,7 @@ def start(args):
     # Loop through fasta files
     for fastafile in args.file:
         for line in fastafile:
+            line = line.strip()
             # Check if line header
             if header_re.search(line) is not None:
                 if trig and (args.summary or args.summary_no_header):
@@ -142,24 +143,36 @@ def start(args):
 
                                 seq_count += 1
 
-                                if seq_count >= args.size:
+                                if seq_count >= args.max_sequences:
                                     file_count += 1
                                     seq_count = 0
 
                             if args.summary or args.summary_no_header:
-                                f.write(line.rstrip() + "\t")
+                                f.write(line + "\t")
                         break
             else:
+                seq_len += len(line)
+
+                if args.max_length > 0:
+                    if seq_len > args.max_length:
+                        if (seq_len - args.max_length) >= len(line):
+                            line = ""
+                            seq_len = args.max_length
+                        else:
+                            line = line[:-(seq_len - args.max_length)]
+                            seq_len = args.max_length
+
+
                 if args.summary or args.summary_no_header:
-                    seq_len += len(line.strip())
-                    l = list(line.strip())
+                    l = list(line)
 
                     for c in l:
                         alphabet[c] += 1
 
             if trig:
                 if args.summary is False and args.summary_no_header is False:
-                    f.writelines(line)
+                    if len(line) > 0:
+                        f.write(line + '\n')
 
     if trig and (args.summary or args.summary_no_header):
         f.write(str(seq_len) + "\t" + "|".join([t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
@@ -224,8 +237,12 @@ USAGE
                             help='Split multi-fasta files in smaller files. Size is 1 by default and is set by -z. Use -r to set name prefix. Default output folder is the current working directory. Add a folder to change directory.')
         parser.add_argument('-r', '--prefix',  default='output', type=str,
                             help='Set name prefix for single sequence output mode. Output file name is set as <prefix>{number}.{input-extention}. Only used with option -O.')
-        parser.add_argument('-z', '--size',  default=1, type=int,
-                            help='Set size of new fasta files. Only used with option -O.')
+        parser.add_argument('-z', '--max-sequences',  default=1, type=int,
+                            help='Set max sequences per file. Only used with option -O.')
+        parser.add_argument('-x', '--max-length',  default=-1, type=int,
+                            help='Sequences exceeding --max-length were cut.')
+        #parser.add_argument('-f', '--filter-length',  default=0, type=int,
+        #                    help='Filter sequences by length. A positive value filters all sequences bigger than set out. A negative value vice versa.')
 
         # Process arguments
         args = parser.parse_args()
@@ -252,15 +269,15 @@ if __name__ == "__main__":
         # sys.argv.append("-h")
         # sys.argv.append("-V")
         # sys.argv.append("-s")
-        sys.argv.append("-z")
-        sys.argv.append("10000")
-        sys.argv.append("-O")
-        sys.argv.append(".")
+        sys.argv.append("-x")
+        sys.argv.append("79")
+        # sys.argv.append("-O")
+        # sys.argv.append(".")
         # sys.argv.append("../test/pattern_list")
         # sys.argv.append("-e")
         # sys.argv.append("62518035")
-        sys.argv.append("--prefix")
-        sys.argv.append("tata")
+        # sys.argv.append("--prefix")
+        # sys.argv.append("tata")
         sys.argv.append("-d")
         # sys.argv.append("-e")
         # sys.argv.append(".*")
