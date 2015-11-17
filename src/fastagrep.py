@@ -31,9 +31,9 @@ from argparse import FileType
 from collections import defaultdict
 
 __all__ = []
-__version__ = '1.9'
+__version__ = '1.10'
 __date__ = '2014-09-19'
-__updated__ = '2015-11-16'
+__updated__ = '2015-11-17'
 
 DEBUG = 0
 TESTRUN = 0
@@ -113,7 +113,7 @@ def start(args):
                     f.write(str(seq_len) + "\t" + "|".join([t[0] + ":" + str(t[1]) for t in alphabet.items()]) + "\n")
 
                 alphabet.clear()
-
+                seq_len = 0
                 trig = False
 
                 # Loops through all patterns
@@ -253,21 +253,20 @@ if __name__ == "__main__":
         # sys.argv.append("-V")
         # sys.argv.append("-s")
         sys.argv.append("-z")
-        sys.argv.append("3")
-        sys.argv.append("-r")
-        sys.argv.append("test")
+        sys.argv.append("10000")
         sys.argv.append("-O")
         sys.argv.append(".")
         # sys.argv.append("../test/pattern_list")
-        sys.argv.append("-e")
-        sys.argv.append("62518035")
+        # sys.argv.append("-e")
+        # sys.argv.append("62518035")
         sys.argv.append("--prefix")
         sys.argv.append("tata")
         sys.argv.append("-d")
         # sys.argv.append("-e")
         # sys.argv.append(".*")
         # sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
-        sys.argv.append("../test/test_dup.fa")
+        sys.argv.append("/home/nauer/Projects/Proteomics/Scripts/snakemake/proto/10029.refseq66.protein.fna")
+                        #"../test/test_dup.fa")
 
     if TESTRUN:
         import doctest
