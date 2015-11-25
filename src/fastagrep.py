@@ -31,7 +31,7 @@ from argparse import FileType
 from collections import defaultdict
 
 __all__ = []
-__version__ = '2.1'
+__version__ = '2.2'
 __date__ = '2014-09-19'
 __updated__ = '2015-11-25'
 
@@ -241,13 +241,24 @@ def start(args):
                 trig = False
 
                 # Loops through all patterns
+                is_in = False
+
                 for p in pattern:
-                    if p.search(line) is not None:
-                        # New header is valid
-                        trig = True
-                        # Reset fasta object
-                        fasta.reset()
-                        fasta.add_header(line)
+                    if args.fixed_strings:
+                        if p.pattern == line:
+                            is_in = True
+                            break
+                    else:
+                        if p.search(line) is not None:
+                            is_in = True
+                            break
+
+                if is_in != args.invert_match:
+                    # New header is valid
+                    trig = True
+                    # Reset fasta object
+                    fasta.reset()
+                    fasta.add_header(line)
             else:
                 if trig:
                     fasta.add_line(line)
@@ -367,6 +378,10 @@ USAGE
         group.add_argument('-l', '--pattern-list', nargs='?',
                            help='Path to file with multiple patterns. One pattern per line', type=FileType('r'))
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
+        parser.add_argument('-v', '--invert-match', action='store_true',
+                            help='Invert the sense of matching, to select non-matching lines.')
+        parser.add_argument('-t', '--fixed-strings', action='store_true',
+                            help='Interpret PATTERN as a list of fixed strings, separated by newlines, any of which is to be matched.')
         parser.add_argument('file', nargs='+', type=FileType('r'), default='-',
                             help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
         parser.add_argument('-p', '--header-pattern',  default='^>', type=str,
@@ -415,21 +430,22 @@ USAGE
 if __name__ == "__main__":
     if DEBUG:
         # sys.argv.append("-h")
-        # sys.argv.append("-V")
-        # sys.argv.append("-n")
+        #sys.argv.append("-v")
+
+        sys.argv.append("-t")
         # sys.argv.append("-x")
         # sys.argv.append("79")
-        sys.argv.append("-O")
+        # sys.argv.append("-O")
         #sys.argv.append("test.fna")
         # sys.argv.append("../test/pattern_list")
-        # sys.argv.append("-e")
-        # sys.argv.append("62518035")
-        # sys.argv.append("--prefix")
+        sys.argv.append("-l")
+        sys.argv.append("../test/list")
+        sys.argv.append("--")
         # sys.argv.append("tata")
-        sys.argv.append("-z")
-        sys.argv.append("5")
-        sys.argv.append("-m")
-        sys.argv.append("20")
+        #sys.argv.append("-z")
+        #sys.argv.append("5")
+        #sys.argv.append("-m")
+        #sys.argv.append("20")
         # sys.argv.append("-F")
         # sys.argv.append("250")
         # sys.argv.append("-L")
