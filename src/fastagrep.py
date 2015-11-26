@@ -31,9 +31,9 @@ from argparse import FileType
 from collections import defaultdict
 
 __all__ = []
-__version__ = '2.2'
+__version__ = '2.3'
 __date__ = '2014-09-19'
-__updated__ = '2015-11-25'
+__updated__ = '2015-11-26'
 
 DEBUG = 0
 TESTRUN = 0
@@ -206,7 +206,7 @@ def start(args):
                             # Add sequence length to max_seq_length
                             max_seq_length += fasta.get_length()
 
-                            if (max_seq_length > args.max_seq_length and args.max_seq_length > 0):
+                            if (max_seq_length > args.max_seq_length and args.max_seq_length > 0) or seq_count >= args.max_sequences:
                                 if seq_count >= 0:
                                     seq_count = 0
                                 else:
@@ -223,7 +223,7 @@ def start(args):
                                                                            file_extension])), 'w')
 
                                 file_count += 1
-                                seq_count = 0
+                                # seq_count = 0
 
                                 # Write Header for option summary
                                 if args.summary:
@@ -432,20 +432,20 @@ if __name__ == "__main__":
         # sys.argv.append("-h")
         #sys.argv.append("-v")
 
-        sys.argv.append("-t")
+        # sys.argv.append("-t")
         # sys.argv.append("-x")
         # sys.argv.append("79")
-        # sys.argv.append("-O")
+        sys.argv.append("-O")
         #sys.argv.append("test.fna")
         # sys.argv.append("../test/pattern_list")
-        sys.argv.append("-l")
-        sys.argv.append("../test/list")
-        sys.argv.append("--")
+        #sys.argv.append("-l")
+        #sys.argv.append("../test/list")
+        # sys.argv.append("--")
         # sys.argv.append("tata")
-        #sys.argv.append("-z")
-        #sys.argv.append("5")
-        #sys.argv.append("-m")
-        #sys.argv.append("20")
+        sys.argv.append("-z")
+        sys.argv.append("3")
+        sys.argv.append("-m")
+        sys.argv.append("24")
         # sys.argv.append("-F")
         # sys.argv.append("250")
         # sys.argv.append("-L")
