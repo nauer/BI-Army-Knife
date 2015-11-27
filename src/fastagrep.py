@@ -54,106 +54,128 @@ class CLIError(Exception):
 
 
 class Fasta():
-    g_duplicate_header = set()
-    g_count = 0
-    g_seq_len = 0
+    __duplicate_header = set()
+    __count = 0
+    __seq_len = 0
 
-    @staticmethod
-    def increment_fasta(seq_len):
-        Fasta.g_count += 1
-        Fasta.g_seq_len += seq_len
+    @classmethod
+    def increment_fasta(cls, seq_len):
+        Fasta.__count += 1
+        Fasta.__seq_len += seq_len
 
-    @staticmethod
-    def reset_counter():
-        Fasta.g_count = 0
+    @classmethod
+    def reset_counter(cls):
+        Fasta.__count = 0
 
-    @staticmethod
-    def get_counter():
-        return Fasta.g_count
+    @classmethod
+    def get_counter(cls):
+        return Fasta.__count
 
-    @staticmethod
-    def reset_seq_len():
-        Fasta.g_seq_len = 0
+    @classmethod
+    def reset_seq_len(cls):
+        Fasta.__seq_len = 0
 
-    @staticmethod
-    def get_comb_seq_len():
-        return Fasta.g_seq_len
+    @classmethod
+    def get_comb_seq_len(cls):
+        return Fasta.__seq_len
 
-    @staticmethod
-    def read_fasta(fastafile, header_re):
+    @classmethod
+    def read_fasta(cls, fastafile, header_re):
         fasta = Fasta()
 
         for line in fastafile:
             line = line.strip()
             # Check if line header
             if header_re.search(line) is not None:
-                if fasta.get_header() is not None:
-                    #Fasta.increment_seq_len(fasta.get_length())
+                if fasta.header is not "":
+                    # Fasta.increment_seq_len(fasta.get_length())
                     yield fasta
                 fasta.reset()
-                fasta.add_header(line)
+                fasta.header = line
             else:
-                fasta.add_line(line)
+                fasta.add_content(line)
 
         yield fasta
 
-
     def __init__(self):
-        self.reset()
+        self.__content = []
+        self.__header = ""
+        self.__alphabet = defaultdict(int)
+        self.__md5 = hashlib.md5()
+
+    def __repr__(self):
+        return "{0}({1})".format(self.__class__.__name__ + "\n", "\n".join([self.__header, self.__content]))
+
+    def __str__(self):
+        return self.get_fasta()
+
+    def __eq__(self, other):
+        if not isinstance(other, Fasta):
+            return NotImplemented
+        return (self.__content == other.__content) and (self.__header == other.__header)
+
+    def __hash__(self):
+        return hash(id(self))
 
     def reset(self):
-        self.content = []
-        self.header = None
-        self.alphabet = defaultdict(int)
-        self.md5 = hashlib.md5()
+        self.__content = []
+        self.__header = ""
+        self.__alphabet = defaultdict(int)
+        self.__md5 = hashlib.md5()
 
-    def add_header(self, header):
-        self.header = header
-        #Fasta.increment_counter()
+    @property
+    def header(self):
+        return self.__header
 
-    def get_header(self):
-        return self.header
+    @header.setter
+    def header(self, header):
+        self.__header = header.rstrip()
+
+    @property
+    def content(self):
+        return "\n".join(self.__content)
+
+    def add_content(self, line):
+        self.__content.append(line.strip())
 
     def is_duplicate(self):
-        self.md5.update(self.header.encode('utf8'))
+        self.__md5.update(self.__header.encode('utf8'))
 
-        if self.md5.hexdigest() in Fasta.g_duplicate_header:
+        if self.__md5.hexdigest() in Fasta.__duplicate_header:
             return True
         else:
-            Fasta.g_duplicate_header.add(self.md5.hexdigest())
+            Fasta.__duplicate_header.add(self.__md5.hexdigest())
             return False
 
-    def add_line(self, line):
-        self.content.append(line)
+    @property
+    def seq(self):
+        return "".join(self.__content)
 
-    def get_content(self):
-        return "\n".join(self.content)
+    @property
+    def seq_length(self):
+        return len(self.seq)
 
-    def get_seq(self):
-        return "".join(self.content)
-
-    def get_length(self):
-        return len(self.get_seq())
-
-    def get_summary(self):
-        l = list(self.get_seq())
+    @property
+    def summary(self):
+        l = list(self.seq)
 
         for c in l:
-            self.alphabet[c] += 1
+            self.__alphabet[c] += 1
 
-        return str(self.get_length()) + "\t" + "|".join([item[0] + ":" + str(item[1]) for item in self.alphabet.items()]) + "\n"
+        return str(self.seq_length()) + "\t" + "|".join([item[0] + ":" + str(item[1]) for item in self.__alphabet.items()]) + "\n"
 
     def get_fasta(self, wide=None):
         if wide is None or wide <= 0:
-            return "\n".join([self.header, self.get_content()]) + "\n"
+            return "\n".join([self.__header, self.content]) + "\n"
         else:
-            l = [self.get_seq()[i:i + wide] for i in range(0, self.get_length(), wide)]
-            l.insert(0,self.get_header())
+            l = [self.seq[i:i + wide] for i in range(0, self.seq_length(), wide)]
+            l.insert(0, self.header)
             return "\n".join(l) + "\n"
 
 
 def start(args):
     if DEBUG:
+        print(repr(args))
         print(args)
 
     pattern = list()
@@ -204,28 +226,28 @@ def start(args):
     for fastafile in args.file:
         for fasta in Fasta.read_fasta(fastafile, header_re):
             # Check if duplicate
-            if args.rm_duplicates and fasta.header is not None:
+            if args.rm_duplicates and fasta.__header is not None:
                 continue
 
             # Filter for max_length
             if args.max_length > 0:
-                if fasta.get_length() > args.max_length:
+                if fasta.seq_length() > args.max_length:
                     continue
 
             # Filter for min_length
             if args.min_length > 0:
-                if fasta.get_length() < args.min_length:
+                if fasta.seq_length() < args.min_length:
                     continue
 
             is_in = False
 
             for p in pattern:
                 if args.fixed_strings:
-                    if p.pattern == fasta.get_header():
+                    if p.pattern == fasta.header:
                         is_in = True
                         break
                 else:
-                    if p.search(fasta.get_header()) is not None:
+                    if p.search(fasta.header) is not None:
                         is_in = True
                         break
 
@@ -244,10 +266,10 @@ def start(args):
                         else:
                             new_content.append(row)
 
-                    fasta.content = new_content
+                    fasta.__content = new_content
 
                 # New header is valid
-                Fasta.increment_fasta(fasta.get_length())
+                Fasta.increment_fasta(fasta.seq_length)
 
                 # Split multi-fasta into smaller fasta files
                 if args.split is not None:
@@ -259,12 +281,13 @@ def start(args):
                                 f.close()
 
                             file_count += 1
-                            f = open(os.path.join(args.split, "".join([args.prefix, str(file_count), file_extension])), 'w')
+                            f = open(os.path.join(args.split, "".join([args.prefix, str(file_count),
+                                                                       file_extension])), 'w')
 
                             # Reset multi file varibales
                             Fasta.reset_seq_len()
                             Fasta.reset_counter()
-                            Fasta.increment_fasta(fasta.get_length())
+                            Fasta.increment_fasta(fasta.seq_length)
 
                             # Write Header for option summary
                             if args.summary:
@@ -274,7 +297,7 @@ def start(args):
                 if args.summary is False and args.summary_no_header is False:
                     f.write(fasta.get_fasta(args.line_length))
                 else:
-                    f.write(fasta.get_header() + "\t" + fasta.get_summary())
+                    f.write(fasta.header + "\t" + fasta.summary)
             else:
                 continue
 
@@ -284,8 +307,8 @@ def start(args):
         end = time.time()
         print(end - start)
         #print("TATA:" + fasta.header)
-        #print(fasta.get_content())
-        #print(fasta.get_summary())
+        #print(fasta.content)
+        #print(fasta.summary)
 
 def main(argv=None): # IGNORE:C0111
     """Command line options."""
@@ -396,8 +419,8 @@ if __name__ == "__main__":
         # sys.argv.append("250")
         # sys.argv.append("-L")
         # sys.argv.append("52")
-        sys.argv.append("-e")
-        sys.argv.append("625180360")
+        # sys.argv.append("-e")
+        # sys.argv.append("625180360")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
         #sys.argv.append("/home/nauer/Projects/Proteomics/Scripts/snakemake/proto/test/output1.fna")
         #sys.argv.append("/home/nauer/Projects/Proteomics/Scripts/snakemake/proto/test/output2.fna")
