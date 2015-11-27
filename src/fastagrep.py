@@ -54,7 +54,49 @@ class CLIError(Exception):
 
 
 class Fasta():
-    gduplicate_header = set()
+    g_duplicate_header = set()
+    g_count = 0
+    g_seq_len = 0
+
+    @staticmethod
+    def increment_fasta(seq_len):
+        Fasta.g_count += 1
+        Fasta.g_seq_len += seq_len
+
+    @staticmethod
+    def reset_counter():
+        Fasta.g_count = 0
+
+    @staticmethod
+    def get_counter():
+        return Fasta.g_count
+
+    @staticmethod
+    def reset_seq_len():
+        Fasta.g_seq_len = 0
+
+    @staticmethod
+    def get_comb_seq_len():
+        return Fasta.g_seq_len
+
+    @staticmethod
+    def read_fasta(fastafile, header_re):
+        fasta = Fasta()
+
+        for line in fastafile:
+            line = line.strip()
+            # Check if line header
+            if header_re.search(line) is not None:
+                if fasta.get_header() is not None:
+                    #Fasta.increment_seq_len(fasta.get_length())
+                    yield fasta
+                fasta.reset()
+                fasta.add_header(line)
+            else:
+                fasta.add_line(line)
+
+        yield fasta
+
 
     def __init__(self):
         self.reset()
@@ -67,6 +109,7 @@ class Fasta():
 
     def add_header(self, header):
         self.header = header
+        #Fasta.increment_counter()
 
     def get_header(self):
         return self.header
@@ -74,10 +117,10 @@ class Fasta():
     def is_duplicate(self):
         self.md5.update(self.header.encode('utf8'))
 
-        if self.md5.hexdigest() in Fasta.gduplicate_header:
+        if self.md5.hexdigest() in Fasta.g_duplicate_header:
             return True
         else:
-            Fasta.gduplicate_header.add(self.md5.hexdigest())
+            Fasta.g_duplicate_header.add(self.md5.hexdigest())
             return False
 
     def add_line(self, line):
@@ -115,9 +158,6 @@ def start(args):
 
     pattern = list()
     file_count = 0
-    trig = False
-    seq_count = 0
-    max_seq_length = 0
 
     # Extract filename and file extension
     filename, file_extension = os.path.splitext(args.file[0].name)
@@ -147,7 +187,7 @@ def start(args):
     if args.output:
         f = args.output
     elif args.split is not None:
-        f = None
+        f = open(os.path.join(args.split, "".join([args.prefix, str(file_count), file_extension])), 'w')
     else:
         f = sys.stdout
 
@@ -160,177 +200,83 @@ def start(args):
     if args.summary and f is not None:
         f.writelines("Header\tSeq.length\tAlphabet\n")
 
-    fasta = Fasta()
-    seq_count = 0
-
     # Loop through fasta files
     for fastafile in args.file:
-        for line in fastafile:
-            line = line.strip()
-            # Check if line header
-            if header_re.search(line) is not None:
-                if trig: # full fasta sequence is valid
-                    # Check if duplicate
-                    if args.rm_duplicates and fasta.header is not None:
-                        trig = not fasta.is_duplicate()
+        for fasta in Fasta.read_fasta(fastafile, header_re):
+            # Check if duplicate
+            if args.rm_duplicates and fasta.header is not None:
+                continue
 
-                    # Filter for max_length
-                    if args.max_length > 0:
-                        if fasta.get_length() > args.max_length:
-                            trig = False
+            # Filter for max_length
+            if args.max_length > 0:
+                if fasta.get_length() > args.max_length:
+                    continue
 
-                    # Filter for min_length
-                    if args.min_length > 0:
-                        if fasta.get_length() < args.min_length:
-                            trig = False
+            # Filter for min_length
+            if args.min_length > 0:
+                if fasta.get_length() < args.min_length:
+                    continue
 
-                    # Write output if trig is True
-                    if trig:
-                        # Cut content to max size
-                        if args.max_size >= 0:
-                            seq_len = 0
-                            new_content = []
+            is_in = False
 
-                            for row in fasta.get_content():
-                                seq_len += len(row)
+            for p in pattern:
+                if args.fixed_strings:
+                    if p.pattern == fasta.get_header():
+                        is_in = True
+                        break
+                else:
+                    if p.search(fasta.get_header()) is not None:
+                        is_in = True
+                        break
 
-                                if seq_len > args.max_size:
-                                    new_content.append(row[0:len(row) - (seq_len - args.max_size)])
-                                else:
-                                    new_content.append(row)
+            if is_in != args.invert_match:
+                # Cut content to max size
+                if args.max_size >= 0:
+                    s_len = 0
+                    new_content = []
 
-                            fasta.content = new_content
+                    for row in fasta.content:
+                        s_len += len(row)
 
-                        # Split multi-fasta into smaller fasta files
-                        if args.split is not None:
-                            # Add sequence length to max_seq_length
-                            max_seq_length += fasta.get_length()
-
-                            if (max_seq_length > args.max_seq_length and args.max_seq_length > 0) or seq_count >= args.max_sequences:
-                                if seq_count >= 0:
-                                    seq_count = 0
-                                else:
-                                    pass # TODO warning 1.sequence is already longer than max_seq_length
-
-                            if seq_count == 0:
-                                if f is not None:
-                                    f.close()
-
-                                if seq_count >= args.max_sequences or max_seq_length > args.max_seq_length:
-                                    max_seq_length = fasta.get_length()
-
-                                f = open(os.path.join(args.split, "".join([args.prefix, str(file_count),
-                                                                           file_extension])), 'w')
-
-                                file_count += 1
-                                # seq_count = 0
-
-                                # Write Header for option summary
-                                if args.summary:
-                                    f.writelines("Header\tSeq.length\tAlphabet\n")
-
-                            seq_count += 1
-
-                        # Write data
-                        if args.summary is False and args.summary_no_header is False:
-                            f.write(fasta.get_fasta(args.line_length))
+                        if s_len > args.max_size:
+                            new_content.append(row[0:len(row) - (s_len - args.max_size)])
+                            break
                         else:
-                            f.write(fasta.get_header() + "\t" + fasta.get_summary())
+                            new_content.append(row)
 
-                # Reset trig
-                trig = False
+                    fasta.content = new_content
 
-                # Loops through all patterns
-                is_in = False
+                # New header is valid
+                Fasta.increment_fasta(fasta.get_length())
 
-                for p in pattern:
-                    if args.fixed_strings:
-                        if p.pattern == line:
-                            is_in = True
-                            break
-                    else:
-                        if p.search(line) is not None:
-                            is_in = True
-                            break
+                # Split multi-fasta into smaller fasta files
+                if args.split is not None:
+                    if (Fasta.get_comb_seq_len() > args.max_seq_length and Fasta.get_counter() > 1 and args.max_seq_length > 0) or Fasta.get_counter() > args.max_sequences:
+                        if Fasta.get_counter() == 1:
+                            pass # TODO warning 1.sequence is already longer than max_seq_length
+                        else:
+                            if f is not None:
+                                f.close()
 
-                if is_in != args.invert_match:
-                    # New header is valid
-                    trig = True
-                    # Reset fasta object
-                    fasta.reset()
-                    fasta.add_header(line)
+                            file_count += 1
+                            f = open(os.path.join(args.split, "".join([args.prefix, str(file_count), file_extension])), 'w')
+
+                            # Reset multi file varibales
+                            Fasta.reset_seq_len()
+                            Fasta.reset_counter()
+                            Fasta.increment_fasta(fasta.get_length())
+
+                            # Write Header for option summary
+                            if args.summary:
+                                f.writelines("Header\tSeq.length\tAlphabet\n")
+
+                # Write Data
+                if args.summary is False and args.summary_no_header is False:
+                    f.write(fasta.get_fasta(args.line_length))
+                else:
+                    f.write(fasta.get_header() + "\t" + fasta.get_summary())
             else:
-                if trig:
-                    fasta.add_line(line)
-
-    # Write last fasta sequence
-    if trig:
-        # Check if duplicate
-        if args.rm_duplicates and fasta.header is not None:
-            trig = not fasta.is_duplicate()
-
-        # Filter for max_length
-        if args.max_length > 0:
-            if fasta.get_length() > args.max_length:
-                trig = False
-
-        # Filter for min_length
-        if args.min_length > 0:
-            if fasta.get_length() < args.min_length:
-                trig = False
-
-        # Write output if trig is True
-        if trig:
-            # Cut content to max size
-            if args.max_size >= 0:
-                seq_len = 0
-                new_content = []
-
-                for row in fasta.get_content():
-                    seq_len += len(row)
-
-                    if seq_len > args.max_size:
-                        new_content.append(row[0:len(row) - (seq_len - args.max_size)])
-                    else:
-                        new_content.append(row)
-
-                fasta.content = new_content
-
-            # Split multi-fasta into smaller fasta files
-            if args.split is not None:
-                # Add sequence length to max_seq_length
-                max_seq_length += fasta.get_length()
-
-                if (max_seq_length > args.max_seq_length and args.max_seq_length > 0):
-                    if seq_count >= 0:
-                        seq_count = 0
-                    else:
-                        pass # TODO warning 1.sequence is already longer than max_seq_length
-
-                if seq_count == 0:
-                    if f is not None:
-                        f.close()
-
-                    if seq_count >= args.max_sequences or max_seq_length > args.max_seq_length:
-                        max_seq_length = fasta.get_length()
-
-                    f = open(os.path.join(args.split, "".join([args.prefix, str(file_count),
-                                                               file_extension])), 'w')
-
-                    file_count += 1
-                    seq_count = 0
-
-                    # Write Header for option summary
-                    if args.summary:
-                        f.writelines("Header\tSeq.length\tAlphabet\n")
-
-                seq_count += 1
-
-            # Write data
-            if args.summary is False and args.summary_no_header is False:
-                f.write(fasta.get_fasta(args.line_length))
-            else:
-                f.write(fasta.get_header() + "\t" + fasta.get_summary())
+                continue
 
     if DEBUG:
         print("Current working directory:".format(os.getcwd()))
@@ -400,7 +346,7 @@ USAGE
         parser.add_argument('-z', '--max-sequences',  default=1, type=int,
                             help='Set max sequences per file. Only used with option -O.')
         parser.add_argument('-x', '--max-size',  default=-1, type=int,
-                            help='Sequences exceeding --max-length were cut.')
+                            help='Sequences exceeding --max-length were cut. Cutting is done after -f/-F but before -m.')
         parser.add_argument('-L', '--line-length',  default=None, type=int,
                             help='Max character length of output line. Default is same output as input.')
         parser.add_argument('-f', '--min-length',  default=0, type=int, help='Filter sequences smaller --min_length.')
@@ -435,23 +381,23 @@ if __name__ == "__main__":
         # sys.argv.append("-t")
         # sys.argv.append("-x")
         # sys.argv.append("79")
-        sys.argv.append("-O")
+        # sys.argv.append("-O")
         #sys.argv.append("test.fna")
         # sys.argv.append("../test/pattern_list")
         #sys.argv.append("-l")
         #sys.argv.append("../test/list")
         # sys.argv.append("--")
         # sys.argv.append("tata")
-        sys.argv.append("-z")
-        sys.argv.append("3")
-        sys.argv.append("-m")
-        sys.argv.append("24")
-        # sys.argv.append("-F")
+        sys.argv.append("-x")
+        sys.argv.append("10")
+        #sys.argv.append("-F")
+        #sys.argv.append("24")
+        #sys.argv.append("-s")
         # sys.argv.append("250")
         # sys.argv.append("-L")
         # sys.argv.append("52")
-        #sys.argv.append("-e")
-        #sys.argv.append(".*")
+        sys.argv.append("-e")
+        sys.argv.append("625180360")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")
         #sys.argv.append("/home/nauer/Projects/Proteomics/Scripts/snakemake/proto/test/output1.fna")
         #sys.argv.append("/home/nauer/Projects/Proteomics/Scripts/snakemake/proto/test/output2.fna")
