@@ -109,6 +109,9 @@ multi-fasta file searches.
 
   # Convert multi-fasta file to single-fasta files in the current working directory
   fastagrep.py --prefix "singlefasta" -O -- - < test.faa
+
+  # Convert multi-fasta file into smaller multi-fasta files with 5 sequences per file
+  fastagrep.py --prefix "5seq" -O --max-sequences 5 -- - < test.faa
 ~~~
 
 ###Dependencies
