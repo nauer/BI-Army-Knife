@@ -398,7 +398,7 @@ USAGE
         parser.add_argument('-r', '--prefix',  default='output', type=str,
                             help='Set name prefix for single sequence output mode. Output file name is set as <prefix>{number}.{input-extention}. Only used with option -O.')
         parser.add_argument('-z', '--max-sequences',  default=1, type=int,
-                            help='Set max sequences per file. Only used with option -O.')
+                            help='Set max sequences per file. Size is 1 by default. Only used with option -O.')
         parser.add_argument('-x', '--max-size',  default=-1, type=int,
                             help='Sequences exceeding --max-length were cut.')
         parser.add_argument('-L', '--line-length',  default=None, type=int,
