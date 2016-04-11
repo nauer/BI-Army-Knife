@@ -10,7 +10,7 @@ It defines classes_and_methods
 
 @author:     Norbert Auer
 
-@copyright:  Norbert Auer, Vienna. All rights reserved.
+@copyright:  Copyright 2014 University of Natural Resources and Life Sciences, Vienna. All rights reserved.
 
 @license:    license
 
