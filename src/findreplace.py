@@ -122,7 +122,7 @@ USAGE
         # handle keyboard interrupt Easy to use parsing tools.###
         return 0
     except Exception as e:
-        if DEBUG or TESTRUN:
+        if DEBUG:
             raise(e)
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
