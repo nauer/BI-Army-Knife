@@ -30,12 +30,14 @@ from argparse import FileType
 
 from collections import defaultdict
 
-__all__ = []
-__version__ = '2.3'
-__date__ = '2014-09-19'
-__updated__ = '2015-11-26'
+from BioHelper import (Fasta, MultiFasta,Alphabeth)
 
-DEBUG = 0
+__all__ = []
+__version__ = '3.0'
+__date__ = '2014-09-19'
+__updated__ = '2016-07-15'
+
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
@@ -53,71 +55,67 @@ class CLIError(Exception):
         return self.msg
 
 
-class Fasta():
-    gduplicate_header = set()
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.content = []
-        self.header = None
-        self.alphabet = defaultdict(int)
-        self.md5 = hashlib.md5()
-
-    def add_header(self, header):
-        self.header = header
-
-    def get_header(self):
-        return self.header
-
-    def is_duplicate(self):
-        self.md5.update(self.header.encode('utf8'))
-
-        if self.md5.hexdigest() in Fasta.gduplicate_header:
-            return True
-        else:
-            Fasta.gduplicate_header.add(self.md5.hexdigest())
-            return False
-
-    def add_line(self, line):
-        self.content.append(line)
-
-    def get_content(self):
-        return "\n".join(self.content)
-
-    def get_seq(self):
-        return "".join(self.content)
-
-    def get_length(self):
-        return len(self.get_seq())
-
-    def get_summary(self):
-        l = list(self.get_seq())
-
-        for c in l:
-            self.alphabet[c] += 1
-
-        return str(self.get_length()) + "\t" + "|".join([item[0] + ":" + str(item[1]) for item in self.alphabet.items()]) + "\n"
-
-    def get_fasta(self, wide=None):
-        if wide is None or wide <= 0:
-            return "\n".join([self.header, self.get_content()]) + "\n"
-        else:
-            l = [self.get_seq()[i:i + wide] for i in range(0, self.get_length(), wide)]
-            l.insert(0,self.get_header())
-            return "\n".join(l) + "\n"
+# class Fa(Fasta):
+#
+#
+#     def __init__(self):
+#         pass
+#
+#     def is_duplicate(self):
+#         self.md5.update(self.header.encode('utf8'))
+#
+#         if self.md5.hexdigest() in Fa.gduplicate_header:
+#             return True
+#         else:
+#             Fa.gduplicate_header.add(self.md5.hexdigest())
+#             return False
+#
+#     def add_line(self, line):
+#         self.content.append(line)
+#
+#     def get_content(self):
+#         return "\n".join(self.content)
+#
+#     def get_seq(self):
+#         return "".join(self.content)
+#
+#     def get_length(self):
+#         return len(self.get_seq())
+#
+#
+#
+#     def get_fasta(self, wide=None):
+#         if wide is None or wide <= 0:
+#             return "\n".join([self.header, self.get_content()]) + "\n"
+#         else:
+#             l = [self.get_seq()[i:i + wide] for i in range(0, self.get_length(), wide)]
+#             l.insert(0,self.get_header())
+#             return "\n".join(l) + "\n"
 
 
 def start(args):
     if DEBUG:
         print(args)
+        # fa = Fasta(">My Fasta:  ","ATGGGTGAACCGAGCAGTAGCTGCTAGCTAGCTAGCATGTTGACGNCGACCGGAGGCGANcGATCGTTTTCGACTGACTAGCATGCTATCAGCATCAGCACTATCAGCATCATCGACTANcCAGCAGCAGCGACATCTATTCTCAGCGCATCTAC")
+        #
+        # for line in fa.get_line_by_line(10):
+        #     print(line)
+        #
+        # fa.set_line_width(0)
+        #
+        # for line in fa:
+        #     print(line)
+        #
+        # print("**End**" * 30)
+
 
     pattern = list()
     file_count = 0
     trig = False
     seq_count = 0
     max_seq_length = 0
+
+    duplicate_header = set()
 
     # Extract filename and file extension
     filename, file_extension = os.path.splitext(args.file[0].name)
@@ -145,123 +143,179 @@ def start(args):
             pattern.append(re.compile(p.strip()))
 
     if args.output:
-        f = args.output
+        f_out = args.output
     elif args.split is not None:
-        f = None
+        f_out = None
     else:
-        f = sys.stdout
+        f_out = sys.stdout
 
     if DEBUG:
         start = time.time()
 
-    header_re = re.compile(args.header_pattern.strip())
-
     # Write Header for option summary
-    if args.summary and f is not None:
-        f.writelines("Header\tSeq.length\tAlphabet\n")
+    if args.summary and f_out is not None:
+        f_out.writelines("Header\tSeq.length\tAlphabet\n")
 
-    fasta = Fasta()
     seq_count = 0
+
+
+    if args.split is not None:
+        print(os.path.join(args.split, "".join([args.prefix, str(file_count), file_extension])))
+        out = open(os.path.join(args.split, "".join([args.prefix, str(file_count), file_extension])), 'wb')
 
     # Loop through fasta files
     for fastafile in args.file:
-        for line in fastafile:
-            line = line.strip()
-            # Check if line header
-            if header_re.search(line) is not None:
-                if trig: # full fasta sequence is valid
-                    # Check if duplicate
-                    if args.rm_duplicates and fasta.header is not None:
-                        trig = not fasta.is_duplicate()
+        for fasta in MultiFasta.read_fasta(file_obj=fastafile, header_pattern=args.header_pattern.strip()):
+            if args.rm_duplicates:
+                md5 = hashlib.md5()
+                md5.update(fasta.get_header())
 
-                    # Filter for max_length
-                    if args.max_length > 0:
-                        if fasta.get_length() > args.max_length:
-                            trig = False
+                digest = md5.hexdigest()
+                if digest in duplicate_header:
+                    continue
+                else:
+                    duplicate_header.add(digest)
 
-                    # Filter for min_length
-                    if args.min_length > 0:
-                        if fasta.get_length() < args.min_length:
-                            trig = False
+            if args.max_length > 0 and fasta.get_seq_length() > args.max_length:
+                continue
 
-                    # Write output if trig is True
-                    if trig:
-                        # Cut content to max size
-                        if args.max_size >= 0:
-                            seq_len = 0
-                            new_content = []
+            if args.min_length > 0 and fasta.get_seq_length() < args.min_length:
+                continue
 
-                            for row in fasta.get_content():
-                                seq_len += len(row)
+            if args.max_size >= 0:
+                fasta = fasta[0:args.max_size]
 
-                                if seq_len > args.max_size:
-                                    new_content.append(row[0:len(row) - (seq_len - args.max_size)])
-                                else:
-                                    new_content.append(row)
-
-                            fasta.content = new_content
-
-                        # Split multi-fasta into smaller fasta files
-                        if args.split is not None:
-                            # Add sequence length to max_seq_length
-                            max_seq_length += fasta.get_length()
-
-                            if (max_seq_length > args.max_seq_length and args.max_seq_length > 0) or seq_count >= args.max_sequences:
-                                if seq_count >= 0:
-                                    seq_count = 0
-                                else:
-                                    pass # TODO warning 1.sequence is already longer than max_seq_length
-
-                            if seq_count == 0:
-                                if f is not None:
-                                    f.close()
-
-                                if seq_count >= args.max_sequences or max_seq_length > args.max_seq_length:
-                                    max_seq_length = fasta.get_length()
-
-                                f = open(os.path.join(args.split, "".join([args.prefix, str(file_count),
-                                                                           file_extension])), 'w')
-
-                                file_count += 1
-                                # seq_count = 0
-
-                                # Write Header for option summary
-                                if args.summary:
-                                    f.writelines("Header\tSeq.length\tAlphabet\n")
-
-                            seq_count += 1
-
-                        # Write data
-                        if args.summary is False and args.summary_no_header is False:
-                            f.write(fasta.get_fasta(args.line_length))
-                        else:
-                            f.write(fasta.get_header() + "\t" + fasta.get_summary())
-
-                # Reset trig
-                trig = False
-
-                # Loops through all patterns
-                is_in = False
-
-                for p in pattern:
-                    if args.fixed_strings:
-                        if p.pattern == line:
-                            is_in = True
-                            break
+            # Write to more files
+            if args.split is not None:
+                if args.summary:
+                    if args.summary_no_header is False:
+                        for line in fasta.get_line_by_line(args.line_length):
+                            f_out.write(line)
                     else:
-                        if p.search(line) is not None:
-                            is_in = True
-                            break
+                        f_out.write(fasta.get_header() + "\t" + fasta.get_summary())
+                else:
+                    for line in fasta.get_line_by_line(args.line_length):
+                        f_out.write(line)
 
-                if is_in != args.invert_match:
-                    # New header is valid
-                    trig = True
-                    # Reset fasta object
-                    fasta.reset()
-                    fasta.add_header(line)
+
+            # Write to one file
             else:
-                if trig:
-                    fasta.add_line(line)
+                if args.summary:
+                    if args.summary_no_header is False:
+                        for line in fasta.get_line_by_line(args.line_length):
+                            f_out.write(line)
+                    else:
+                        f_out.write(fasta.get_header() + "\t" + fasta.get_summary())
+                else:
+                    for line in fasta.get_line_by_line(args.line_length):
+                        f_out.write(line + "\n")
+
+
+
+            file_count += 1
+
+
+            # Write data
+            #
+
+    exit()
+        # for line in fastafile:
+        #     line = line.strip()
+        #     # Check if line header
+        #     if header_re.search(line) is not None:
+        #         if trig: # full fasta sequence is valid
+        #             # Check if duplicate
+        #             if args.rm_duplicates and fasta.header is not None:
+        #                 trig = not fasta.is_duplicate()
+        #
+        #             # Filter for max_length
+        #             if args.max_length > 0:
+        #                 if fasta.get_length() > args.max_length:
+        #                     trig = False
+        #
+        #             # Filter for min_length
+        #             if args.min_length > 0:
+        #                 if fasta.get_length() < args.min_length:
+        #                     trig = False
+        #
+        #             # Write output if trig is True
+        #             if trig:
+        #                 # Cut content to max size
+        #                 if args.max_size >= 0:
+        #                     seq_len = 0
+        #                     new_content = []
+        #
+        #                     for row in fasta.get_content():
+        #                         seq_len += len(row)
+        #
+        #                         if seq_len > args.max_size:
+        #                             new_content.append(row[0:len(row) - (seq_len - args.max_size)])
+        #                         else:
+        #                             new_content.append(row)
+        #
+        #                     fasta.content = new_content
+        #
+        #                 # Split multi-fasta into smaller fasta files
+        #                 if args.split is not None:
+        #                     # Add sequence length to max_seq_length
+        #                     max_seq_length += fasta.get_length()
+        #
+        #                     if (max_seq_length > args.max_seq_length and args.max_seq_length > 0) or seq_count >= args.max_sequences:
+        #                         if seq_count >= 0:
+        #                             seq_count = 0
+        #                         else:
+        #                             pass # TODO warning 1.sequence is already longer than max_seq_length
+        #
+        #                     if seq_count == 0:
+        #                         if f is not None:
+        #                             f.close()
+        #
+        #                         if seq_count >= args.max_sequences or max_seq_length > args.max_seq_length:
+        #                             max_seq_length = fasta.get_length()
+        #
+        #                         f = open(os.path.join(args.split, "".join([args.prefix, str(file_count),
+        #                                                                    file_extension])), 'w')
+        #
+        #                         file_count += 1
+        #                         # seq_count = 0
+        #
+        #                         # Write Header for option summary
+        #                         if args.summary:
+        #                             f.writelines("Header\tSeq.length\tAlphabet\n")
+        #
+        #                     seq_count += 1
+        #
+        #                 # Write data
+        #                 if args.summary is False and args.summary_no_header is False:
+        #                     f.write(fasta.get_fasta(args.line_length))
+        #                 else:
+        #                     f.write(fasta.get_header() + "\t" + fasta.get_summary())
+        #
+        #         # Reset trig
+        #         trig = False
+        #
+        #         # Loops through all patterns
+        #         is_in = False
+        #
+        #         for p in pattern:
+        #             if args.fixed_strings:
+        #                 if p.pattern == line:
+        #                     is_in = True
+        #                     break
+        #             else:
+        #                 if p.search(line) is not None:
+        #                     is_in = True
+        #                     break
+        #
+        #         if is_in != args.invert_match:
+        #             # New header is valid
+        #             trig = True
+        #             # Reset fasta object
+        #             fasta.reset()
+        #             fasta.add_header(line)
+        #     else:
+        #         if trig:
+        #             fasta.add_line(line)
 
     # Write last fasta sequence
     if trig:
@@ -308,13 +362,13 @@ def start(args):
                         pass # TODO warning 1.sequence is already longer than max_seq_length
 
                 if seq_count == 0:
-                    if f is not None:
-                        f.close()
+                    if f_out is not None:
+                        f_out.close()
 
                     if seq_count >= args.max_sequences or max_seq_length > args.max_seq_length:
                         max_seq_length = fasta.get_length()
 
-                    f = open(os.path.join(args.split, "".join([args.prefix, str(file_count),
+                    f_out = open(os.path.join(args.split, "".join([args.prefix, str(file_count),
                                                                file_extension])), 'w')
 
                     file_count += 1
@@ -322,15 +376,15 @@ def start(args):
 
                     # Write Header for option summary
                     if args.summary:
-                        f.writelines("Header\tSeq.length\tAlphabet\n")
+                        f_out.writelines("Header\tSeq.length\tAlphabet\n")
 
                 seq_count += 1
 
             # Write data
             if args.summary is False and args.summary_no_header is False:
-                f.write(fasta.get_fasta(args.line_length))
+                f_out.write(fasta.get_fasta(args.line_length))
             else:
-                f.write(fasta.get_header() + "\t" + fasta.get_summary())
+                f_out.write(fasta.get_header() + "\t" + fasta.get_summary())
 
     if DEBUG:
         print("Current working directory:".format(os.getcwd()))
@@ -382,7 +436,7 @@ USAGE
                             help='Invert the sense of matching, to select non-matching lines.')
         parser.add_argument('-t', '--fixed-strings', action='store_true',
                             help='Interpret PATTERN as a list of fixed strings, separated by newlines, any of which is to be matched.')
-        parser.add_argument('file', nargs='+', type=FileType('r'), default='-',
+        parser.add_argument('file', nargs='+', type=FileType('rb'), default='-',
                             help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
         parser.add_argument('-p', '--header-pattern',  default='^>', type=str,
                             help='Use this pattern to identify header line.')
@@ -401,7 +455,7 @@ USAGE
                             help='Set max sequences per file. Size is 1 by default. Only used with option -O.')
         parser.add_argument('-x', '--max-size',  default=-1, type=int,
                             help='Sequences exceeding --max-length were cut.')
-        parser.add_argument('-L', '--line-length',  default=None, type=int,
+        parser.add_argument('-L', '--line-length',  default=60, type=int,
                             help='Max character length of output line. Default is same output as input.')
         parser.add_argument('-f', '--min-length',  default=0, type=int, help='Filter sequences smaller --min_length.')
         parser.add_argument('-F', '--max-length',  default=0, type=int, help='Filter sequences bigger --max_length.')
@@ -432,24 +486,26 @@ if __name__ == "__main__":
         # sys.argv.append("-h")
         #sys.argv.append("-v")
 
-        # sys.argv.append("-t")
-        # sys.argv.append("-x")
-        # sys.argv.append("79")
-        sys.argv.append("-O")
-        #sys.argv.append("test.fna")
-        # sys.argv.append("../test/pattern_list")
-        #sys.argv.append("-l")
+        sys.argv.append("-e")
+        sys.argv.append("625180358")
+        sys.argv.append("-d")
+        sys.argv.append("-x")
+        sys.argv.append("5")
+        #sys.argv.append("../test/pattern_list")
+        #sys.argv.append("-O")
+
         #sys.argv.append("../test/list")
         # sys.argv.append("--")
         # sys.argv.append("tata")
-        sys.argv.append("-z")
-        sys.argv.append("3")
-        sys.argv.append("-m")
-        sys.argv.append("24")
+        #sys.argv.append("-z")
+        #sys.argv.append("3")
+        #sys.argv.append("-m")
+        #sys.argv.append("24")
         # sys.argv.append("-F")
         # sys.argv.append("250")
-        # sys.argv.append("-L")
-        # sys.argv.append("52")
+        sys.argv.append("-L")
+        sys.argv.append("2")
+        sys.argv.append("--")
         #sys.argv.append("-e")
         #sys.argv.append(".*")
         #sys.argv.append("([^\t]*)\tgi\|(\d+).*?([^|]+)\|$")

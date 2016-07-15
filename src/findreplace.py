@@ -101,8 +101,6 @@ USAGE
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
         parser.add_argument('-v', '--invert-match', action='store_true',
                             help='Invert the sense of matching, to select non-matching lines.')
-        parser.add_argument('-t', '--fixed-strings', action='store_true',
-                            help='Interpret PATTERN as a list of fixed strings, separated by newlines, any of which is to be matched.')
         parser.add_argument('pattern', type=str,
                             help='The find pattern.')
         parser.add_argument('replace', type=str, default="",
