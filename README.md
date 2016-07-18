@@ -111,6 +111,19 @@ multi-fasta file searches.
   fastagrep.py --prefix "singlefasta" -O -- - < test.faa
 ~~~
 
+# New features in version 3.0
++ Sub sequencing now supported
++ Create reverse transcript from RNA or DNA sequences
+
+~~~
+  # Create the reverse transcript of all fasta sequences
+  fastagrep.py -T DNA -- DNA.fa
+
+  # Returns the sub sequence from index 10 to 110 of all sequences
+  fastagrep.py -a 10 -b 100 -- DNA.fa
+~~~
+
+
 ###Dependencies
 Python >= 3.4
 Biopython >= 1.64
