@@ -126,6 +126,5 @@ multi-fasta file searches.
 
 ###Dependencies
 Python >= 3.4
-Biopython >= 1.64
 
 ----
