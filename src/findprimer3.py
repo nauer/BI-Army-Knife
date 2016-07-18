@@ -41,46 +41,46 @@ __updated__ = '2016-07-04'
 DEBUG = 1
 
 # Primer orig Settings
-# primer3_settings = {
-# b'PRIMER_TASK' : b"pick_detection_primers",
-# b'PRIMER_PICK_LEFT_PRIMER' : b"1",
-# b'PRIMER_PICK_RIGHT_PRIMER' : b"1",
-# b'PRIMER_OPT_SIZE' : b"20",
-# b'PRIMER_MIN_SIZE' : b"18",
-# b'PRIMER_MAX_SIZE' : b"22",
-# b'PRIMER_MAX_NS_ACCEPTED' : b"1",
-# #b'PRIMER_PAIR_0_PRODUCT_SIZE' : b"500",
-# #b'PRIMER_PAIR_4_PRODUCT_SIZE' : b"10000",
-# b'PRIMER_EXPLAIN_FLAG' : b"1",
-# b'PRIMER_MAX_GC' : b"60",
-# b'PRIMER_MIN_GC' : b"40",
-# b'PRIMER_OPT_GC_PERCENT' : b"50",
-# b'PRIMER_OPT_TM' : b"60",
-# b'PRIMER_MAX_TM' : b"62",
-# b'PRIMER_MIN_TM' : b"55",
-# b'PRIMER_PAIR_MAX_DIFF_TM' : b"1",
-# b'PRIMER_NUM_RETURN' : b"5"}
-
-# PRIMER 3 Settings
 primer3_settings = {
 b'PRIMER_TASK' : b"pick_detection_primers",
 b'PRIMER_PICK_LEFT_PRIMER' : b"1",
 b'PRIMER_PICK_RIGHT_PRIMER' : b"1",
 b'PRIMER_OPT_SIZE' : b"20",
-b'PRIMER_MIN_SIZE' : b"17",
-b'PRIMER_MAX_SIZE' : b"23",
+b'PRIMER_MIN_SIZE' : b"18",
+b'PRIMER_MAX_SIZE' : b"22",
 b'PRIMER_MAX_NS_ACCEPTED' : b"1",
 #b'PRIMER_PAIR_0_PRODUCT_SIZE' : b"500",
 #b'PRIMER_PAIR_4_PRODUCT_SIZE' : b"10000",
 b'PRIMER_EXPLAIN_FLAG' : b"1",
-b'PRIMER_MAX_GC' : b"65",
-b'PRIMER_MIN_GC' : b"35",
+b'PRIMER_MAX_GC' : b"60",
+b'PRIMER_MIN_GC' : b"40",
 b'PRIMER_OPT_GC_PERCENT' : b"50",
 b'PRIMER_OPT_TM' : b"60",
-b'PRIMER_MAX_TM' : b"64",
-b'PRIMER_MIN_TM' : b"53",
-b'PRIMER_PAIR_MAX_DIFF_TM' : b"2",
+b'PRIMER_MAX_TM' : b"62",
+b'PRIMER_MIN_TM' : b"55",
+b'PRIMER_PAIR_MAX_DIFF_TM' : b"1",
 b'PRIMER_NUM_RETURN' : b"5"}
+
+# PRIMER 3 Settings
+# primer3_settings = {
+# b'PRIMER_TASK' : b"pick_detection_primers",
+# b'PRIMER_PICK_LEFT_PRIMER' : b"1",
+# b'PRIMER_PICK_RIGHT_PRIMER' : b"1",
+# b'PRIMER_OPT_SIZE' : b"20",
+# b'PRIMER_MIN_SIZE' : b"17",
+# b'PRIMER_MAX_SIZE' : b"23",
+# b'PRIMER_MAX_NS_ACCEPTED' : b"1",
+# #b'PRIMER_PAIR_0_PRODUCT_SIZE' : b"500",
+# #b'PRIMER_PAIR_4_PRODUCT_SIZE' : b"10000",
+# b'PRIMER_EXPLAIN_FLAG' : b"1",
+# b'PRIMER_MAX_GC' : b"65",
+# b'PRIMER_MIN_GC' : b"35",
+# b'PRIMER_OPT_GC_PERCENT' : b"50",
+# b'PRIMER_OPT_TM' : b"60",
+# b'PRIMER_MAX_TM' : b"64",
+# b'PRIMER_MIN_TM' : b"53",
+# b'PRIMER_PAIR_MAX_DIFF_TM' : b"2",
+# b'PRIMER_NUM_RETURN' : b"5"}
 
 def start(args):
     p3 = Primer3()

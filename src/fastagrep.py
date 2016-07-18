@@ -31,9 +31,9 @@ from argparse import FileType
 from BioHelper import (Fasta, MultiFasta,Alphabeth)
 
 __all__ = []
-__version__ = '3.0'
+__version__ = '3.1'
 __date__ = '2014-09-19'
-__updated__ = '2016-07-16'
+__updated__ = '2016-07-18'
 
 DEBUG = 0
 TESTRUN = 0
@@ -74,15 +74,17 @@ def start(args):
             raise CLIError("-O {} - Path does not exist".format(args.split))
 
     # Set default pattern if pattern was not defined
-    if args.pattern is None and args.pattern_list is None:
+    if args.pattern is None and args.pattern_list is not None:
+        for p in args.pattern_list:
+            pattern.append(re.compile(p.strip().encode()))
+    elif args.pattern is None and args.pattern_list is None:
         args.pattern = b"."
+    else:
+        args.pattern = args.pattern.encode()
 
     # Get search pattern
     if args.pattern is not None:
         pattern.append(re.compile(args.pattern.strip()))
-    else:
-        for p in args.pattern_list:
-            pattern.append(re.compile(p.strip().encode()))
 
     # Output to file or stdout or many files
     if args.output:
@@ -165,7 +167,7 @@ def start(args):
             # Write to more files
             if args.split is not None:
                 max_seq_length += fasta.get_seq_length()
-                if seq_count >= args.max_sequences or max_seq_length >= args.max_seq_length:
+                if seq_count >= args.max_sequences or (args.max_seq_length != 0 and max_seq_length >= args.max_seq_length):
                     f_out.close()
                     f_out = None
                     seq_count = 0
@@ -291,29 +293,30 @@ USAGE
             raise(e)
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help")
+        sys.stderr.write(indent + "  for help use --help\n")
         return 2
 
 if __name__ == "__main__":
     if DEBUG:
         # sys.argv.append("-h")
         # sys.argv.append("-v")
-        sys.argv.append("-m")
-        sys.argv.append("290")
+
         sys.argv.append("-z")
-        sys.argv.append("5")
-        sys.argv.append("-r")
-        sys.argv.append("outt")
-        sys.argv.append("-a")
-        sys.argv.append("20")
-        sys.argv.append("-b")
-        sys.argv.append("20")
-        sys.argv.append("-L")
-        sys.argv.append("60")
-        sys.argv.append("-T")
-        sys.argv.append("DNA")
+        sys.argv.append("100")
+        sys.argv.append("-e")
+        sys.argv.append("Cricetulus griseus")
+        sys.argv.append("-f")
+        sys.argv.append("40")
+        sys.argv.append("-m")
+        sys.argv.append("200000")
+        sys.argv.append("-F")
+        sys.argv.append("4000")
+        sys.argv.append("--prefix")
+        sys.argv.append("input_")
+        sys.argv.append("-O")
+        sys.argv.append("/home/nauer/Projects/Proteomics/Sources/tmp")
         sys.argv.append("--")
-        sys.argv.append("../test/test_dup.fa")
+        sys.argv.append("/home/nauer/Projects/Proteomics/Sources/vertebrate_mammalian_complete.protein.faa")
 
     if TESTRUN:
         import doctest
