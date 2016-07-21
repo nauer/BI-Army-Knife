@@ -28,12 +28,12 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from argparse import FileType
 
-from BioHelper import (Fasta, MultiFasta,Alphabeth)
+from BioPylib.BioPylib import (Fasta, MultiFasta,Alphabeth)
 
 __all__ = []
-__version__ = '3.1'
+__version__ = '3.2'
 __date__ = '2014-09-19'
-__updated__ = '2016-07-18'
+__updated__ = '2016-07-21'
 
 DEBUG = 0
 TESTRUN = 0
@@ -311,12 +311,12 @@ if __name__ == "__main__":
         sys.argv.append("200000")
         sys.argv.append("-F")
         sys.argv.append("4000")
-        sys.argv.append("--prefix")
-        sys.argv.append("input_")
-        sys.argv.append("-O")
-        sys.argv.append("/home/nauer/Projects/Proteomics/Sources/tmp")
+        #sys.argv.append("--prefix")
+        #sys.argv.append("input_")
+        #sys.argv.append("-O")
+        #sys.argv.append("../test/")
         sys.argv.append("--")
-        sys.argv.append("/home/nauer/Projects/Proteomics/Sources/vertebrate_mammalian_complete.protein.faa")
+        sys.argv.append("../test/test.fa")
 
     if TESTRUN:
         import doctest

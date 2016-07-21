@@ -1,0 +1,3 @@
+[submodule "src/BioPylib"]
+	path = src/BioPylib
+	url = https://github.com/nauer/BioPylib
