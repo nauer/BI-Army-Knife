@@ -124,7 +124,7 @@ multi-fasta file searches.
 ~~~
 
 
-###Dependencies
+### Dependencies
 Python >= 3.4
 
 ----
