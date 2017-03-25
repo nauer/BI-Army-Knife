@@ -10,7 +10,7 @@ Small and easy to use bioinformatic tools.
 Uses one or more regular regression patterns to extract different fields from line.
 TODO
 
-###Dependencies
+### Dependencies
 Python >= 3.4
 ----
 
