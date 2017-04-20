@@ -31,9 +31,9 @@ from argparse import FileType
 from BioPylib.BioPylib import (Fasta, MultiFasta,Alphabeth)
 
 __all__ = []
-__version__ = '3.2'
+__version__ = '3.3'
 __date__ = '2014-09-19'
-__updated__ = '2016-07-21'
+__updated__ = '2017-04-20'
 
 DEBUG = 0
 TESTRUN = 0
@@ -51,6 +51,7 @@ class CLIError(Exception):
 
     def __unicode__(self):
         return self.msg
+
 
 def start(args):
     pattern = list()
@@ -76,7 +77,7 @@ def start(args):
     # Set default pattern if pattern was not defined
     if args.pattern is None and args.pattern_list is not None:
         for p in args.pattern_list:
-            pattern.append(re.compile(p.strip().encode()))
+            pattern.append(re.compile(p.strip()))
     elif args.pattern is None and args.pattern_list is None:
         args.pattern = b"."
     else:
@@ -301,16 +302,17 @@ if __name__ == "__main__":
         # sys.argv.append("-h")
         # sys.argv.append("-v")
 
-        sys.argv.append("-z")
-        sys.argv.append("100")
-        sys.argv.append("-e")
-        sys.argv.append("Cricetulus griseus")
-        sys.argv.append("-f")
-        sys.argv.append("40")
-        sys.argv.append("-m")
-        sys.argv.append("200000")
-        sys.argv.append("-F")
-        sys.argv.append("4000")
+        sys.argv.append("-l")
+        sys.argv.append("../test/pattern_list")
+        #sys.argv.append("100")
+        #sys.argv.append("-e")
+        #sys.argv.append("Cricetulus griseus")
+        #sys.argv.append("-f")
+        #sys.argv.append("40")
+        #sys.argv.append("-m")
+        #sys.argv.append("200000")
+        #sys.argv.append("-F")
+        #sys.argv.append("4000")
         #sys.argv.append("--prefix")
         #sys.argv.append("input_")
         #sys.argv.append("-O")
