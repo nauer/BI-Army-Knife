@@ -31,9 +31,9 @@ from argparse import FileType
 from BioPylib.BioPylib import (Fasta, MultiFasta,Alphabeth)
 
 __all__ = []
-__version__ = '3.3'
+__version__ = '3.4.1'
 __date__ = '2014-09-19'
-__updated__ = '2017-04-20'
+__updated__ = '2017-05-12'
 
 DEBUG = 0
 TESTRUN = 0
@@ -59,6 +59,7 @@ def start(args):
     seq_count = 0
     max_seq_length = 0
     duplicate_header = set()
+    temp = []
 
     # Extract filename and file extension
     filename, file_extension = os.path.splitext(args.file[0].name)
@@ -154,8 +155,8 @@ def start(args):
                 continue
 
             # Cutting too long sequences
-            if args.max_size >= 0:
-                fasta = fasta[0:args.max_size]
+            if args.cut_to_size >= 0:
+                fasta = fasta[0:args.cut_to_size]
 
             # Create the reverse transcript
             if args.reverse_transcript == "DNA":
@@ -167,6 +168,9 @@ def start(args):
 
             # Write to more files
             if args.split is not None:
+                if args.max_sequences == -1:
+                    args.max_sequences = 1
+
                 max_seq_length += fasta.get_seq_length()
                 if seq_count >= args.max_sequences or (args.max_seq_length != 0 and max_seq_length >= args.max_seq_length):
                     f_out.close()
@@ -190,6 +194,9 @@ def start(args):
 
             # Write to one file
             else:
+                if seq_count == args.max_sequences:
+                    break
+
                 if args.summary:
                     f_out.writelines("Header\tSeq.length\tAlphabet\n")
                     f_out.write(fasta.get_header().decode() + "\t" + fasta.get_summary())
@@ -200,6 +207,8 @@ def start(args):
                         f_out.write(line + "\n")
 
             seq_count += 1
+
+
 
     if DEBUG:
         print("\n" + "*" * 60 + "\n" + " " * 25 + "DEBUG MODE:\n")
@@ -242,6 +251,8 @@ USAGE
         group = parser.add_mutually_exclusive_group()
         group2 = parser.add_mutually_exclusive_group()
         group3 = parser.add_mutually_exclusive_group()
+        parser.add_argument('file', nargs='+', type=FileType('rb'), default='-',
+                            help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
         group.add_argument('-e', '--pattern', help='Single regular expression pattern to search for', type=str)
         group.add_argument('-l', '--pattern-list', nargs='?',
                            help='Path to file with multiple patterns. One pattern per line', type=FileType('rb'))
@@ -250,10 +261,10 @@ USAGE
                             help='Invert the sense of matching, to select non-matching lines.')
         parser.add_argument('-t', '--fixed-strings', action='store_true',
                             help='Interpret PATTERN as a list of fixed strings, separated by newlines, any of which is to be matched.')
-        parser.add_argument('file', nargs='+', type=FileType('rb'), default='-',
-                            help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
         parser.add_argument('-p', '--header-pattern',  default='^>', type=str,
                             help='Use this pattern to identify header line.')
+        #parser.add_argument('-R', '--randomize', action='store_true',
+        #                    help='Randomize order of sequences')
         parser.add_argument('-d', '--rm-duplicates', action='store_true',
                             help='Remove sequences with duplicate header lines. Hold only first founded sequence.')
         group2.add_argument('-s', '--summary', action='store_true',
@@ -264,11 +275,11 @@ USAGE
         group3.add_argument('-O', '--split', type=str, default='-', nargs="?",
                             help='Split multi-fasta files in smaller files. Size is 1 by default and is set by -z. Use -r to set name prefix. Default output folder is the current working directory. Add a folder to change directory.')
         parser.add_argument('-r', '--prefix',  default='output', type=str,
-                            help='Set name prefix for single sequence output mode. Output file name is set as <prefix>{number}.{input-extention}. Only used with option -O.')
-        parser.add_argument('-z', '--max-sequences',  default=1, type=int,
+                            help='Set name prefix for single sequence output mode. Output file name is set as <prefix>{number}.{input-extention}.')
+        parser.add_argument('-z', '--max-sequences',  default=-1, type=int,
                             help='Set max sequences per file. Size is 1 by default. Only used with option -O.')
-        parser.add_argument('-x', '--max-size',  default=-1, type=int,
-                            help='Sequences exceeding --max-length were cut.')
+        parser.add_argument('-x', '--cut-to-size',  default=-1, type=int,
+                            help='Sequences exceeding --max-length were cut to size.')
         parser.add_argument('-a', '--start', default=-1, type=int, help='Start index of sequence.')
         parser.add_argument('-b', '--length', default=-1, type=int, help='Length of sequence. If --start is not set returns sub sequence from start index 0.')
         parser.add_argument('-T', '--reverse-transcript', type=str,
@@ -302,13 +313,13 @@ if __name__ == "__main__":
         # sys.argv.append("-h")
         # sys.argv.append("-v")
 
-        sys.argv.append("-l")
-        sys.argv.append("../test/pattern_list")
-        #sys.argv.append("100")
-        #sys.argv.append("-e")
+        #sys.argv.append("-l")
+        #sys.argv.append("../test/pattern_list")
+        #sys.argv.append("-z")
+        #sys.argv.append("2")
         #sys.argv.append("Cricetulus griseus")
-        #sys.argv.append("-f")
-        #sys.argv.append("40")
+        sys.argv.append("-e")
+        sys.argv.append("6251803")
         #sys.argv.append("-m")
         #sys.argv.append("200000")
         #sys.argv.append("-F")
@@ -318,6 +329,7 @@ if __name__ == "__main__":
         #sys.argv.append("-O")
         #sys.argv.append("../test/")
         sys.argv.append("--")
+        sys.argv.append("../test/test.fa")
         sys.argv.append("../test/test.fa")
 
     if TESTRUN:
