@@ -62,7 +62,8 @@ def start(args):
     temp = []
 
     # Extract filename and file extension
-    filename, file_extension = os.path.splitext(args.file[0].name)
+    if args.file is not sys.stdin:
+        filename, file_extension = os.path.splitext(args.file[0].name)
 
     # Check if single sequence output mode
     if args.split is None:
@@ -102,6 +103,9 @@ def start(args):
     # Output to single file no split
     if args.split is not None:
         f_out = open(os.path.join(args.split, "".join([args.prefix, str(file_count), file_extension])), 'w')
+
+    if args.file is sys.stdin:
+        args.file = (args.file, )
 
     # Loop through fasta files
     for fastafile in args.file:
@@ -209,7 +213,6 @@ def start(args):
             seq_count += 1
 
 
-
     if DEBUG:
         print("\n" + "*" * 60 + "\n" + " " * 25 + "DEBUG MODE:\n")
         print("Current working directory: {}".format(os.getcwd()))
@@ -251,7 +254,7 @@ USAGE
         group = parser.add_mutually_exclusive_group()
         group2 = parser.add_mutually_exclusive_group()
         group3 = parser.add_mutually_exclusive_group()
-        parser.add_argument('file', nargs='+', type=FileType('rb'), default='-',
+        parser.add_argument('file', nargs='*', type=FileType('rb'), default=sys.stdin,
                             help="File from type fasta. Leave empty or use '-' to read from Stdin or pipe.")
         group.add_argument('-e', '--pattern', help='Single regular expression pattern to search for', type=str)
         group.add_argument('-l', '--pattern-list', nargs='?',
@@ -264,7 +267,9 @@ USAGE
         parser.add_argument('-p', '--header-pattern',  default='^>', type=str,
                             help='Use this pattern to identify header line.')
         #parser.add_argument('-R', '--randomize', action='store_true',
-        #                    help='Randomize order of sequences')
+        #                    help='Randomize order of sequences.')
+        # parser.add_argument('-c', '--count', action='store_true',
+        #                    help='Return the sequence count.')
         parser.add_argument('-d', '--rm-duplicates', action='store_true',
                             help='Remove sequences with duplicate header lines. Hold only first founded sequence.')
         group2.add_argument('-s', '--summary', action='store_true',
@@ -329,8 +334,9 @@ if __name__ == "__main__":
         #sys.argv.append("-O")
         #sys.argv.append("../test/")
         sys.argv.append("--")
-        sys.argv.append("../test/test.fa")
-        sys.argv.append("../test/test.fa")
+        sys.argv.append("-")
+        #sys.argv.append("../test/test.fa")
+        #sys.argv.append("../test/test.fa")
 
     if TESTRUN:
         import doctest
